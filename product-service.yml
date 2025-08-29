@@ -1,0 +1,18 @@
+ # Configuración específica del Product Service
+  spring:
+    datasource:
+      url: jdbc:postgresql://localhost:5432/arka_products
+      username: arka_user
+      password: arka_password
+
+    jpa:
+      hibernate:
+        ddl-auto: create-drop
+      show-sql: true
+
+  server:
+    port: 8081
+
+  logging:
+    level:
+      com.arka.product_service: DEBUG
