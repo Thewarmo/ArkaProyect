@@ -13,12 +13,6 @@
         hibernate:
           dialect: org.hibernate.dialect.PostgreSQLDialect
 
-  # Configuración de Eureka (Service Discovery)
-  eureka:
-    client:
-      service-url:
-        defaultZone: http://localhost:8761/eureka
-
   # Actuator
   management:
     endpoints:
