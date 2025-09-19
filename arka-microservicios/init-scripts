@@ -1,0 +1,15 @@
+init-scripts/01-create-databases.sql:
+  -- Crear bases de datos adicionales para otros microservicios
+  CREATE DATABASE arka_orders;
+  CREATE DATABASE arka_inventory;
+  CREATE DATABASE arka_customers;
+
+  -- Crear usuario para cada servicio (buena práctica de seguridad)
+  CREATE USER orders_user WITH PASSWORD 'orders_password';
+  CREATE USER inventory_user WITH PASSWORD 'inventory_password';
+  CREATE USER customers_user WITH PASSWORD 'customers_password';
+
+  -- Otorgar permisos
+  GRANT ALL PRIVILEGES ON DATABASE arka_orders TO orders_user;
+  GRANT ALL PRIVILEGES ON DATABASE arka_inventory TO inventory_user;
+  GRANT ALL PRIVILEGES ON DATABASE arka_customers TO customers_user;
