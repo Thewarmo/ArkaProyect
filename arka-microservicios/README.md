@@ -10,10 +10,22 @@ Sistema de microservicios para **Arka**, empresa distribuidora de accesorios par
 
 ## 🏗️ Arquitectura Implementada
 
-### Microservicios Desarrollados
+### Microservicios Desarrollados (7/9 - 75% Completo con Integraciones)
 1. **Config Server** (Puerto 8889) - Configuración centralizada ✅ COMPLETO
 2. **API Gateway** (Puerto 8090) - Punto de entrada único ✅ COMPLETO
 3. **Product Service** (Puerto 8081) - Gestión de productos ✅ COMPLETO
+4. **Auth Server** (Puerto 8082) - Autenticación y autorización JWT ✅ COMPLETO
+5. **Customer Service** (Puerto 8083) - Gestión de clientes y direcciones ✅ COMPLETO
+6. **Inventory Service** (Puerto 8084) - Control de stock con concurrencia ✅ COMPLETO + RELEASE
+7. **Order Service** (Puerto 8085) - Gestión de órdenes de compra ✅ COMPLETO + INTEGRADO
+
+### 🔗 Integraciones Implementadas (4/6 - 67%)
+- ✅ **Order ↔ Inventory (Reserve)** - Validación y reserva de stock
+- ✅ **Order ↔ Inventory (Release)** - Liberación de stock ✨ **NUEVO**
+- ✅ **Order ↔ Customer** - Validación de clientes
+- ✅ **Order ↔ Product** - Validación y precios actualizados
+- ⏳ **JWT Validation** - Validación en API Gateway (pendiente)
+- ⏳ **Notification Service** - Emails de estado de órdenes (pendiente)
 
 ### Tecnologías Utilizadas
 - **Java 21** con **Spring Boot 3.5.5**
@@ -35,15 +47,16 @@ arka-microservicios/
 ├── config-server/           # Servidor de configuración ✅
 ├── api-gateway/            # API Gateway - Punto de entrada ✅
 ├── product-service/         # Microservicio de productos ✅
-├── auth-server/            # (Pendiente)
-├── order-service/          # (Pendiente)
-├── inventory-service/      # (Pendiente)
-├── customer-service/       # (Pendiente)
+├── auth-server/            # Autenticación y autorización JWT ✅
+├── customer-service/       # Gestión de clientes ✅
+├── inventory-service/      # Control de stock y concurrencia ✅
+├── order-service/          # Gestión de órdenes de compra ✅
 ├── cart-service/          # (Pendiente)
 ├── notification-service/   # (Pendiente)
 ├── report-service/        # (Pendiente)
 ├── supplier-service/      # (Pendiente)
-└── docker-compose.yml     # Servicios de base de datos ✅
+├── docker-compose.yml     # Servicios de base de datos ✅
+└── SESSION_CHECKPOINT.md  # Checkpoint para retomar trabajo ✅
 ```
 
 ## 🏛️ Arquitectura Limpia - Product Service

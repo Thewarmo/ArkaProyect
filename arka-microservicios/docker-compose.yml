@@ -12,6 +12,19 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+
+  postgres-auth:
+    image: postgres:15-alpine
+    container_name: arka-postgres-auth
+    environment:
+      POSTGRES_DB: arka_auth
+      POSTGRES_USER: arka_user
+      POSTGRES_PASSWORD: arka_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
 
   mongodb:
     image: mongo:6
@@ -34,4 +47,5 @@ services:
 
 volumes:
   postgres_data:
+  postgres_auth_data:
   mongodb_data:
