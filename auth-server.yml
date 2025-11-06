@@ -6,9 +6,9 @@ spring:
     name: auth-server
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/arka_auth
-    username: arka_user
-    password: arka_password
+    url: jdbc:postgresql://centerbeam.proxy.rlwy.net:34241/railway
+    username: postgres
+    password: HMroWPVhjEVmVdDIPhhPABBtEbBKirFd
     driver-class-name: org.postgresql.Driver
 
   jpa:
