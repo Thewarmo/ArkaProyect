@@ -1,0 +1,46 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: order-service
+
+  datasource:
+    url: jdbc:postgresql://centerbeam.proxy.rlwy.net:34241/railway
+    username: postgres
+    password: HMroWPVhjEVmVdDIPhhPABBtEbBKirFd
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+# URLs de servicios externos
+services:
+  inventory-service:
+    url: http://localhost:8084
+  customer-service:
+    url: http://localhost:8083
+  product-service:
+    url: http://localhost:8081
+
+# Actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# Logging
+logging:
+  level:
+    com.arka.order_service: DEBUG
+    org.hibernate.SQL: DEBUG
