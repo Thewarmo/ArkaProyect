@@ -29,6 +29,13 @@
                 filters:
                   - StripPrefix=0
 
+              - id: inventory-service
+                uri: http://localhost:8084
+                predicates:
+                  - Path=/api/v1/inventory/**
+                filters:
+                  - StripPrefix=0
+
             globalcors:
               cors-configurations:
                 '[/**]':
