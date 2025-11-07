@@ -6,7 +6,10 @@ import com.arka.order_service.domain.repositories.OrderRepository;
 import com.arka.order_service.infrastructure.clients.CustomerServiceClient;
 import com.arka.order_service.infrastructure.clients.InventoryServiceClient;
 import com.arka.order_service.infrastructure.clients.ProductServiceClient;
+import com.arka.order_service.infrastructure.clients.dto.CustomerResponse;
 import com.arka.order_service.infrastructure.clients.dto.ProductResponse;
+import com.arka.order_service.infrastructure.events.OrderCreatedEvent;
+import com.arka.order_service.infrastructure.events.OrderEventPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,7 @@ public class CreateOrderUseCase {
     private final CustomerServiceClient customerServiceClient;
     private final ProductServiceClient productServiceClient;
     private final InventoryServiceClient inventoryServiceClient;
+    private final OrderEventPublisher orderEventPublisher;
 
     @Transactional
     public OrderResponse execute(CreateOrderRequest request) {
@@ -68,9 +72,36 @@ public class CreateOrderUseCase {
         // 4. Reservar stock en el inventario
         reserveStockForOrder(savedOrder);
 
+        // 5. Publicar evento de orden creada (asíncrono - no bloquea)
+        publishOrderCreatedEvent(savedOrder, request.getCustomerId());
+
         log.info("Orden creada exitosamente: {}", savedOrder.getOrderNumber());
 
         return mapToResponse(savedOrder);
+    }
+
+    private void publishOrderCreatedEvent(Order order, Long customerId) {
+        try {
+            // Obtener información del cliente para el email
+            CustomerResponse customer = customerServiceClient.getCustomerById(customerId);
+
+            OrderCreatedEvent event = OrderCreatedEvent.builder()
+                    .orderId(order.getId())
+                    .orderNumber(order.getOrderNumber())
+                    .customerId(customerId)
+                    .customerEmail(customer.getEmail())
+                    .customerName(customer.getContactName())
+                    .totalAmount(order.getTotalAmount())
+                    .shippingAddress(order.getShippingAddress())
+                    .createdAt(order.getCreatedAt())
+                    .build();
+
+            orderEventPublisher.publishOrderCreatedEvent(event);
+        } catch (Exception e) {
+            log.error("Error al publicar evento de orden creada: {}", e.getMessage());
+            // No lanzamos excepción - la orden ya fue creada exitosamente
+            // El email simplemente no se enviará, pero la orden está OK
+        }
     }
 
     private void validateCustomer(Long customerId) {
