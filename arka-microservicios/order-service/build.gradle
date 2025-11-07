@@ -41,6 +41,9 @@ dependencies {
     // WebClient para comunicación con otros microservicios
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
+    // RabbitMQ para mensajería asíncrona
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+
     // Database
     runtimeOnly 'org.postgresql:postgresql'
 

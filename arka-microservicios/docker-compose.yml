@@ -45,7 +45,25 @@ services:
     depends_on:
       - postgres
 
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: arka-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: arka_user
+      RABBITMQ_DEFAULT_PASS: arka_password
+    ports:
+      - "5672:5672"    # AMQP port
+      - "15672:15672"  # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
   postgres_auth_data:
   mongodb_data:
+  rabbitmq_data:
