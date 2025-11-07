@@ -3,7 +3,12 @@ package com.arka.order_service.application.usecases;
 import com.arka.order_service.application.dto.*;
 import com.arka.order_service.domain.entities.*;
 import com.arka.order_service.domain.repositories.OrderRepository;
+import com.arka.order_service.infrastructure.clients.CustomerServiceClient;
+import com.arka.order_service.infrastructure.clients.InventoryServiceClient;
+import com.arka.order_service.infrastructure.clients.ProductServiceClient;
+import com.arka.order_service.infrastructure.clients.dto.ProductResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -14,12 +19,27 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CreateOrderUseCase {
 
     private final OrderRepository orderRepository;
+    private final CustomerServiceClient customerServiceClient;
+    private final ProductServiceClient productServiceClient;
+    private final InventoryServiceClient inventoryServiceClient;
 
     @Transactional
     public OrderResponse execute(CreateOrderRequest request) {
+        log.info("Iniciando creación de orden para cliente ID: {}", request.getCustomerId());
+
+        // 1. Validar que el cliente existe y puede hacer órdenes
+        validateCustomer(request.getCustomerId());
+
+        // 2. Validar productos y obtener información actualizada
+        validateAndEnrichProducts(request);
+
+        // 3. Validar disponibilidad de stock
+        validateStock(request);
+
         // Generar número de orden único
         String orderNumber = generateOrderNumber();
 
@@ -45,7 +65,63 @@ public class CreateOrderUseCase {
         // Guardar orden
         Order savedOrder = orderRepository.save(order);
 
+        // 4. Reservar stock en el inventario
+        reserveStockForOrder(savedOrder);
+
+        log.info("Orden creada exitosamente: {}", savedOrder.getOrderNumber());
+
         return mapToResponse(savedOrder);
+    }
+
+    private void validateCustomer(Long customerId) {
+        log.debug("Validando cliente ID: {}", customerId);
+        if (!customerServiceClient.customerExists(customerId)) {
+            throw new RuntimeException("Cliente no encontrado con ID: " + customerId);
+        }
+        if (!customerServiceClient.customerCanPlaceOrders(customerId)) {
+            throw new RuntimeException("El cliente no puede hacer órdenes. Verifique que esté activo y tenga una dirección de entrega configurada.");
+        }
+        log.debug("Cliente validado correctamente");
+    }
+
+    private void validateAndEnrichProducts(CreateOrderRequest request) {
+        log.debug("Validando {} productos", request.getItems().size());
+        for (OrderItemDTO item : request.getItems()) {
+            ProductResponse product = productServiceClient.getProductById(item.getProductId());
+
+            if (!product.isActive()) {
+                throw new RuntimeException("El producto " + product.getName() + " no está disponible");
+            }
+
+            // Actualizar precio y nombre del producto con información actual
+            item.setUnitPrice(product.getPrice());
+            item.setProductName(product.getName());
+        }
+        log.debug("Productos validados y enriquecidos correctamente");
+    }
+
+    private void validateStock(CreateOrderRequest request) {
+        log.debug("Validando disponibilidad de stock");
+        for (OrderItemDTO item : request.getItems()) {
+            if (!inventoryServiceClient.hasAvailableStock(item.getProductId(), item.getQuantity())) {
+                throw new RuntimeException("Stock insuficiente para el producto: " + item.getProductName());
+            }
+        }
+        log.debug("Stock validado correctamente");
+    }
+
+    private void reserveStockForOrder(Order order) {
+        log.info("Reservando stock para orden: {}", order.getOrderNumber());
+        try {
+            for (OrderItem item : order.getItems()) {
+                inventoryServiceClient.reserveStock(item.getProductId(), item.getQuantity());
+                log.debug("Stock reservado: Producto={}, Cantidad={}", item.getProductId(), item.getQuantity());
+            }
+            log.info("Stock reservado exitosamente para la orden: {}", order.getOrderNumber());
+        } catch (Exception e) {
+            log.error("Error al reservar stock para la orden {}: {}", order.getOrderNumber(), e.getMessage());
+            throw new RuntimeException("Error al reservar stock: " + e.getMessage(), e);
+        }
     }
 
     private String generateOrderNumber() {

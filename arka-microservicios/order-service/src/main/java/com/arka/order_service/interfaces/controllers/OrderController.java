@@ -14,6 +14,7 @@ public class OrderController {
 
     private final CreateOrderUseCase createOrderUseCase;
     private final GetOrderByIdUseCase getOrderByIdUseCase;
+    private final CancelOrderUseCase cancelOrderUseCase;
 
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request) {
@@ -23,5 +24,10 @@ public class OrderController {
     @GetMapping("/{id}")
     public ResponseEntity<OrderResponse> getOrderById(@PathVariable Long id) {
         return ResponseEntity.ok(getOrderByIdUseCase.execute(id));
+    }
+
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<OrderResponse> cancelOrder(@PathVariable Long id) {
+        return ResponseEntity.ok(cancelOrderUseCase.execute(id));
     }
 }
