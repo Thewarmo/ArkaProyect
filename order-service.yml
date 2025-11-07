@@ -20,6 +20,13 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
+  # RabbitMQ Configuration
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:arka_user}
+    password: ${RABBITMQ_PASSWORD:arka_password}
+
 # URLs de servicios externos
 services:
   inventory-service:
