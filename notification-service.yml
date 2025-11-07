@@ -1,0 +1,45 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://centerbeam.proxy.rlwy.net:34241/railway
+    username: postgres
+    password: HMroWPVhjEVmVdDIPhhPABBtEbBKirFd
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  # Mail configuration (Gmail SMTP)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:your-email@gmail.com}
+    password: ${MAIL_PASSWORD:your-app-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+# Application configuration
+notification:
+  from:
+    email: ${MAIL_USERNAME:noreply@arka.com}
+    name: "Arka - Distribuidora de PC"
+  enabled: true
+
+# Logging
+logging:
+  level:
+    com.arka.notification_service: DEBUG
+    org.springframework.mail: DEBUG
