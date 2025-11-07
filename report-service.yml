@@ -1,0 +1,55 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: report-service
+
+  datasource:
+    url: jdbc:postgresql://centerbeam.proxy.rlwy.net:34241/railway
+    username: postgres
+    password: HMroWPVhjEVmVdDIPhhPABBtEbBKirFd
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+# URLs de servicios externos
+services:
+  order-service:
+    url: http://localhost:8085
+  product-service:
+    url: http://localhost:8081
+  customer-service:
+    url: http://localhost:8083
+
+# Configuración de reportes
+reports:
+  weekly:
+    schedule:
+      cron: "0 0 8 * * MON"  # Cada lunes a las 8:00 AM
+      enabled: true
+  export:
+    temp-directory: ${java.io.tmpdir}/arka-reports
+
+# Actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,scheduledtasks
+  endpoint:
+    health:
+      show-details: always
+
+# Logging
+logging:
+  level:
+    com.arka.report_service: DEBUG
+    org.springframework.scheduling: DEBUG
