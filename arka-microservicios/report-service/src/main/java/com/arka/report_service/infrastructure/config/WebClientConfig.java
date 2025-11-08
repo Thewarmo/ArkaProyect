@@ -1,6 +1,6 @@
 package com.arka.report_service.infrastructure.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -8,33 +8,30 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class WebClientConfig {
 
-    @Value("${services.order-service.url}")
-    private String orderServiceUrl;
-
-    @Value("${services.product-service.url}")
-    private String productServiceUrl;
-
-    @Value("${services.customer-service.url}")
-    private String customerServiceUrl;
+    @Bean
+    @LoadBalanced
+    public WebClient.Builder loadBalancedWebClientBuilder() {
+        return WebClient.builder();
+    }
 
     @Bean(name = "orderServiceWebClient")
-    public WebClient orderServiceWebClient() {
-        return WebClient.builder()
-                .baseUrl(orderServiceUrl)
+    public WebClient orderServiceWebClient(WebClient.Builder builder) {
+        return builder
+                .baseUrl("http://order-service")
                 .build();
     }
 
     @Bean(name = "productServiceWebClient")
-    public WebClient productServiceWebClient() {
-        return WebClient.builder()
-                .baseUrl(productServiceUrl)
+    public WebClient productServiceWebClient(WebClient.Builder builder) {
+        return builder
+                .baseUrl("http://product-service")
                 .build();
     }
 
     @Bean(name = "customerServiceWebClient")
-    public WebClient customerServiceWebClient() {
-        return WebClient.builder()
-                .baseUrl(customerServiceUrl)
+    public WebClient customerServiceWebClient(WebClient.Builder builder) {
+        return builder
+                .baseUrl("http://customer-service")
                 .build();
     }
 }

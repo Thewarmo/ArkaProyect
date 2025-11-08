@@ -1,6 +1,6 @@
 package com.arka.cart_service.infrastructure.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -8,33 +8,30 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class WebClientConfig {
 
-    @Value("${services.customer-service.url}")
-    private String customerServiceUrl;
-
-    @Value("${services.product-service.url}")
-    private String productServiceUrl;
-
-    @Value("${services.notification-service.url}")
-    private String notificationServiceUrl;
+    @Bean
+    @LoadBalanced
+    public WebClient.Builder loadBalancedWebClientBuilder() {
+        return WebClient.builder();
+    }
 
     @Bean
-    public WebClient customerServiceWebClient() {
-        return WebClient.builder()
-                .baseUrl(customerServiceUrl)
+    public WebClient customerServiceWebClient(WebClient.Builder builder) {
+        return builder
+                .baseUrl("http://customer-service")
                 .build();
     }
 
     @Bean
-    public WebClient productServiceWebClient() {
-        return WebClient.builder()
-                .baseUrl(productServiceUrl)
+    public WebClient productServiceWebClient(WebClient.Builder builder) {
+        return builder
+                .baseUrl("http://product-service")
                 .build();
     }
 
     @Bean
-    public WebClient notificationServiceWebClient() {
-        return WebClient.builder()
-                .baseUrl(notificationServiceUrl)
+    public WebClient notificationServiceWebClient(WebClient.Builder builder) {
+        return builder
+                .baseUrl("http://notification-service")
                 .build();
     }
 }
