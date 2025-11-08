@@ -23,6 +23,18 @@
       health:
         show-details: always
 
+  # Eureka Client - Configuración común
+  eureka:
+    client:
+      service-url:
+        defaultZone: http://localhost:8761/eureka/
+      fetch-registry: true
+      register-with-eureka: true
+    instance:
+      prefer-ip-address: true
+      lease-renewal-interval-in-seconds: 30
+      lease-expiration-duration-in-seconds: 90
+
   # Logging
   logging:
     level:
