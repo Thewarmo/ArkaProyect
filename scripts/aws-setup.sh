@@ -73,7 +73,8 @@ free -h
 
 echo ""
 echo -e "${GREEN}Step 5/8: Installing Git and other utilities...${NC}"
-sudo yum install git wget curl htop -y
+# Note: curl-minimal is already installed on Amazon Linux 2023, skip curl to avoid conflicts
+sudo yum install git wget htop -y
 
 echo ""
 echo -e "${GREEN}Step 6/8: Creating deployment directory...${NC}"
