@@ -1,0 +1,16 @@
+# Grafana Dashboard Provisioning Configuration
+# Este archivo configura la carga automática de dashboards
+
+apiVersion: 1
+
+providers:
+  - name: 'Arka Microservices Dashboards'
+    orgId: 1
+    folder: 'Arka Microservices'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: true

@@ -1,0 +1,155 @@
+# Prometheus configuration for Arka microservices monitoring
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+  scrape_timeout: 10s
+  external_labels:
+    cluster: 'arka-production'
+    environment: 'prod'
+
+# Alertmanager configuration (optional - can add later)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093']
+
+# Load rules once and periodically evaluate them
+# rule_files:
+#   - "alert_rules.yml"
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+          tier: 'monitoring'
+
+  # Node Exporter (EC2 instance metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node-exporter'
+          tier: 'monitoring'
+          instance: 'ec2-t2-micro'
+
+  # Config Server (AWS EC2)
+  - job_name: 'config-server'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['config-server:8889']
+        labels:
+          service: 'config-server'
+          tier: 'infrastructure'
+          platform: 'aws-ec2'
+
+  # Eureka Server (AWS EC2)
+  - job_name: 'eureka-server'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['eureka-server:8761']
+        labels:
+          service: 'eureka-server'
+          tier: 'infrastructure'
+          platform: 'aws-ec2'
+
+  # API Gateway (Railway - using public URL)
+  - job_name: 'api-gateway'
+    metrics_path: '/actuator/prometheus'
+    scheme: https
+    static_configs:
+      - targets: ['${API_GATEWAY_URL}']  # Set via environment variable
+        labels:
+          service: 'api-gateway'
+          tier: 'gateway'
+          platform: 'railway'
+
+  # Auth Server (Railway - using public URL)
+  - job_name: 'auth-server'
+    metrics_path: '/actuator/prometheus'
+    scheme: https
+    static_configs:
+      - targets: ['${AUTH_SERVER_URL}']  # Set via environment variable
+        labels:
+          service: 'auth-server'
+          tier: 'business'
+          platform: 'railway'
+
+  # Product Service (Railway - using public URL)
+  - job_name: 'product-service'
+    metrics_path: '/actuator/prometheus'
+    scheme: https
+    static_configs:
+      - targets: ['${PRODUCT_SERVICE_URL}']  # Set via environment variable
+        labels:
+          service: 'product-service'
+          tier: 'business'
+          platform: 'railway'
+
+  # Customer Service (Railway - using public URL)
+  - job_name: 'customer-service'
+    metrics_path: '/actuator/prometheus'
+    scheme: https
+    static_configs:
+      - targets: ['${CUSTOMER_SERVICE_URL}']  # Set via environment variable
+        labels:
+          service: 'customer-service'
+          tier: 'business'
+          platform: 'railway'
+
+  # Inventory Service (Railway - using public URL)
+  - job_name: 'inventory-service'
+    metrics_path: '/actuator/prometheus'
+    scheme: https
+    static_configs:
+      - targets: ['${INVENTORY_SERVICE_URL}']  # Set via environment variable
+        labels:
+          service: 'inventory-service'
+          tier: 'business'
+          platform: 'railway'
+
+  # Order Service (Railway - using public URL)
+  - job_name: 'order-service'
+    metrics_path: '/actuator/prometheus'
+    scheme: https
+    static_configs:
+      - targets: ['${ORDER_SERVICE_URL}']  # Set via environment variable
+        labels:
+          service: 'order-service'
+          tier: 'business'
+          platform: 'railway'
+
+  # Cart Service (Railway - using public URL)
+  - job_name: 'cart-service'
+    metrics_path: '/actuator/prometheus'
+    scheme: https
+    static_configs:
+      - targets: ['${CART_SERVICE_URL}']  # Set via environment variable
+        labels:
+          service: 'cart-service'
+          tier: 'business'
+          platform: 'railway'
+
+  # Notification Service (Railway - using public URL)
+  - job_name: 'notification-service'
+    metrics_path: '/actuator/prometheus'
+    scheme: https
+    static_configs:
+      - targets: ['${NOTIFICATION_SERVICE_URL}']  # Set via environment variable
+        labels:
+          service: 'notification-service'
+          tier: 'business'
+          platform: 'railway'
+
+  # Report Service (Railway - using public URL)
+  - job_name: 'report-service'
+    metrics_path: '/actuator/prometheus'
+    scheme: https
+    static_configs:
+      - targets: ['${REPORT_SERVICE_URL}']  # Set via environment variable
+        labels:
+          service: 'report-service'
+          tier: 'business'
+          platform: 'railway'

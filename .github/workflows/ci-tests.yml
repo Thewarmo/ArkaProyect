@@ -1,0 +1,525 @@
+name: CI - Tests y Cobertura
+
+on:
+  push:
+    branches: [ master, main, develop ]
+    paths:
+      - 'arka-microservicios/**'
+      - '.github/workflows/ci-tests.yml'
+  pull_request:
+    branches: [ master, main, develop ]
+    paths:
+      - 'arka-microservicios/**'
+      - '.github/workflows/ci-tests.yml'
+
+jobs:
+  # Job para detectar qué servicios han cambiado
+  detect-changes:
+    name: Detectar Cambios
+    runs-on: ubuntu-latest
+    outputs:
+      product: ${{ steps.filter.outputs.product }}
+      customer: ${{ steps.filter.outputs.customer }}
+      inventory: ${{ steps.filter.outputs.inventory }}
+      order: ${{ steps.filter.outputs.order }}
+      cart: ${{ steps.filter.outputs.cart }}
+      notification: ${{ steps.filter.outputs.notification }}
+      report: ${{ steps.filter.outputs.report }}
+      auth: ${{ steps.filter.outputs.auth }}
+      gateway: ${{ steps.filter.outputs.gateway }}
+      config: ${{ steps.filter.outputs.config }}
+      eureka: ${{ steps.filter.outputs.eureka }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            product:
+              - 'arka-microservicios/product-service/**'
+            customer:
+              - 'arka-microservicios/customer-service/**'
+            inventory:
+              - 'arka-microservicios/inventory-service/**'
+            order:
+              - 'arka-microservicios/order-service/**'
+            cart:
+              - 'arka-microservicios/cart-service/**'
+            notification:
+              - 'arka-microservicios/notification-service/**'
+            report:
+              - 'arka-microservicios/report-service/**'
+            auth:
+              - 'arka-microservicios/auth-server/**'
+            gateway:
+              - 'arka-microservicios/api-gateway/**'
+            config:
+              - 'arka-microservicios/config-server/**'
+            eureka:
+              - 'arka-microservicios/eureka-server/**'
+
+  # Job para Product Service
+  test-product-service:
+    name: Tests - Product Service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.product == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Dar permisos de ejecución a gradlew
+        run: chmod +x arka-microservicios/product-service/gradlew
+
+      - name: Ejecutar tests
+        run: |
+          cd arka-microservicios/product-service
+          ./gradlew test jacocoTestReport --no-daemon --stacktrace
+
+      - name: Verificar cobertura
+        run: |
+          cd arka-microservicios/product-service
+          ./gradlew jacocoTestCoverageVerification --no-daemon
+
+      - name: Subir reporte de cobertura
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./arka-microservicios/product-service/build/reports/jacoco/test/jacocoTestReport.xml
+          flags: product-service
+          name: product-service-coverage
+          fail_ci_if_error: false
+
+      - name: Publicar resultados de tests
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            arka-microservicios/product-service/build/test-results/test/*.xml
+          check_name: Test Results - Product Service
+
+  # Job para Customer Service
+  test-customer-service:
+    name: Tests - Customer Service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.customer == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Dar permisos de ejecución a gradlew
+        run: chmod +x arka-microservicios/customer-service/gradlew
+
+      - name: Ejecutar tests
+        run: |
+          cd arka-microservicios/customer-service
+          ./gradlew test jacocoTestReport --no-daemon --stacktrace
+
+      - name: Verificar cobertura
+        run: |
+          cd arka-microservicios/customer-service
+          ./gradlew jacocoTestCoverageVerification --no-daemon
+
+      - name: Subir reporte de cobertura
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./arka-microservicios/customer-service/build/reports/jacoco/test/jacocoTestReport.xml
+          flags: customer-service
+          name: customer-service-coverage
+          fail_ci_if_error: false
+
+  # Job para Inventory Service
+  test-inventory-service:
+    name: Tests - Inventory Service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.inventory == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Dar permisos de ejecución a gradlew
+        run: chmod +x arka-microservicios/inventory-service/gradlew
+
+      - name: Ejecutar tests
+        run: |
+          cd arka-microservicios/inventory-service
+          ./gradlew test jacocoTestReport --no-daemon --stacktrace
+
+      - name: Verificar cobertura
+        run: |
+          cd arka-microservicios/inventory-service
+          ./gradlew jacocoTestCoverageVerification --no-daemon
+
+      - name: Subir reporte de cobertura
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./arka-microservicios/inventory-service/build/reports/jacoco/test/jacocoTestReport.xml
+          flags: inventory-service
+          name: inventory-service-coverage
+          fail_ci_if_error: false
+
+  # Job para Order Service
+  test-order-service:
+    name: Tests - Order Service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.order == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Dar permisos de ejecución a gradlew
+        run: chmod +x arka-microservicios/order-service/gradlew
+
+      - name: Ejecutar tests
+        run: |
+          cd arka-microservicios/order-service
+          ./gradlew test jacocoTestReport --no-daemon --stacktrace
+
+      - name: Verificar cobertura
+        run: |
+          cd arka-microservicios/order-service
+          ./gradlew jacocoTestCoverageVerification --no-daemon
+
+      - name: Subir reporte de cobertura
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./arka-microservicios/order-service/build/reports/jacoco/test/jacocoTestReport.xml
+          flags: order-service
+          name: order-service-coverage
+          fail_ci_if_error: false
+
+  # Job para Cart Service
+  test-cart-service:
+    name: Tests - Cart Service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.cart == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Dar permisos de ejecución a gradlew
+        run: chmod +x arka-microservicios/cart-service/gradlew
+
+      - name: Ejecutar tests
+        run: |
+          cd arka-microservicios/cart-service
+          ./gradlew test jacocoTestReport --no-daemon --stacktrace
+
+      - name: Verificar cobertura
+        run: |
+          cd arka-microservicios/cart-service
+          ./gradlew jacocoTestCoverageVerification --no-daemon
+
+      - name: Subir reporte de cobertura
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./arka-microservicios/cart-service/build/reports/jacoco/test/jacocoTestReport.xml
+          flags: cart-service
+          name: cart-service-coverage
+          fail_ci_if_error: false
+
+  # Job para Notification Service
+  test-notification-service:
+    name: Tests - Notification Service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.notification == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Dar permisos de ejecución a gradlew
+        run: chmod +x arka-microservicios/notification-service/gradlew
+
+      - name: Ejecutar tests
+        run: |
+          cd arka-microservicios/notification-service
+          ./gradlew test jacocoTestReport --no-daemon --stacktrace
+
+      - name: Verificar cobertura
+        run: |
+          cd arka-microservicios/notification-service
+          ./gradlew jacocoTestCoverageVerification --no-daemon
+
+      - name: Subir reporte de cobertura
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./arka-microservicios/notification-service/build/reports/jacoco/test/jacocoTestReport.xml
+          flags: notification-service
+          name: notification-service-coverage
+          fail_ci_if_error: false
+
+  # Job para Report Service
+  test-report-service:
+    name: Tests - Report Service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.report == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Dar permisos de ejecución a gradlew
+        run: chmod +x arka-microservicios/report-service/gradlew
+
+      - name: Ejecutar tests
+        run: |
+          cd arka-microservicios/report-service
+          ./gradlew test jacocoTestReport --no-daemon --stacktrace
+
+      - name: Verificar cobertura
+        run: |
+          cd arka-microservicios/report-service
+          ./gradlew jacocoTestCoverageVerification --no-daemon
+
+      - name: Subir reporte de cobertura
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./arka-microservicios/report-service/build/reports/jacoco/test/jacocoTestReport.xml
+          flags: report-service
+          name: report-service-coverage
+          fail_ci_if_error: false
+
+  # Job para Auth Server
+  test-auth-server:
+    name: Tests - Auth Server
+    needs: detect-changes
+    if: needs.detect-changes.outputs.auth == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Dar permisos de ejecución a gradlew
+        run: chmod +x arka-microservicios/auth-server/gradlew
+
+      - name: Ejecutar tests
+        run: |
+          cd arka-microservicios/auth-server
+          ./gradlew test jacocoTestReport --no-daemon --stacktrace
+
+      - name: Verificar cobertura
+        run: |
+          cd arka-microservicios/auth-server
+          ./gradlew jacocoTestCoverageVerification --no-daemon
+
+      - name: Subir reporte de cobertura
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./arka-microservicios/auth-server/build/reports/jacoco/test/jacocoTestReport.xml
+          flags: auth-server
+          name: auth-server-coverage
+          fail_ci_if_error: false
+
+  # Job para API Gateway
+  test-api-gateway:
+    name: Tests - API Gateway
+    needs: detect-changes
+    if: needs.detect-changes.outputs.gateway == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Dar permisos de ejecución a gradlew
+        run: chmod +x arka-microservicios/api-gateway/gradlew
+
+      - name: Ejecutar tests
+        run: |
+          cd arka-microservicios/api-gateway
+          ./gradlew test jacocoTestReport --no-daemon --stacktrace
+
+      - name: Verificar cobertura
+        run: |
+          cd arka-microservicios/api-gateway
+          ./gradlew jacocoTestCoverageVerification --no-daemon
+
+  # Job para Config Server
+  test-config-server:
+    name: Tests - Config Server
+    needs: detect-changes
+    if: needs.detect-changes.outputs.config == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Dar permisos de ejecución a gradlew
+        run: chmod +x arka-microservicios/config-server/gradlew
+
+      - name: Ejecutar tests
+        run: |
+          cd arka-microservicios/config-server
+          ./gradlew test jacocoTestReport --no-daemon --stacktrace
+
+      - name: Verificar cobertura
+        run: |
+          cd arka-microservicios/config-server
+          ./gradlew jacocoTestCoverageVerification --no-daemon
+
+  # Job para Eureka Server
+  test-eureka-server:
+    name: Tests - Eureka Server
+    needs: detect-changes
+    if: needs.detect-changes.outputs.eureka == 'true' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Dar permisos de ejecución a gradlew
+        run: chmod +x arka-microservicios/eureka-server/gradlew
+
+      - name: Ejecutar tests
+        run: |
+          cd arka-microservicios/eureka-server
+          ./gradlew test jacocoTestReport --no-daemon --stacktrace
+
+      - name: Verificar cobertura
+        run: |
+          cd arka-microservicios/eureka-server
+          ./gradlew jacocoTestCoverageVerification --no-daemon
+
+  # Job final para verificar que todos pasaron
+  all-tests-passed:
+    name: ✅ Todos los Tests Pasaron
+    needs:
+      - test-product-service
+      - test-customer-service
+      - test-inventory-service
+      - test-order-service
+      - test-cart-service
+      - test-notification-service
+      - test-report-service
+      - test-auth-server
+      - test-api-gateway
+      - test-config-server
+      - test-eureka-server
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Verificar resultado de todos los tests
+        run: |
+          echo "Estado de los tests:"
+          echo "Product Service: ${{ needs.test-product-service.result }}"
+          echo "Customer Service: ${{ needs.test-customer-service.result }}"
+          echo "Inventory Service: ${{ needs.test-inventory-service.result }}"
+          echo "Order Service: ${{ needs.test-order-service.result }}"
+          echo "Cart Service: ${{ needs.test-cart-service.result }}"
+          echo "Notification Service: ${{ needs.test-notification-service.result }}"
+          echo "Report Service: ${{ needs.test-report-service.result }}"
+          echo "Auth Server: ${{ needs.test-auth-server.result }}"
+          echo "API Gateway: ${{ needs.test-api-gateway.result }}"
+          echo "Config Server: ${{ needs.test-config-server.result }}"
+          echo "Eureka Server: ${{ needs.test-eureka-server.result }}"
+
+          # Verificar si alguno falló
+          if [[ "${{ needs.test-product-service.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-customer-service.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-inventory-service.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-order-service.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-cart-service.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-notification-service.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-report-service.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-auth-server.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-api-gateway.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-config-server.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-eureka-server.result }}" == "failure" ]]; then
+            echo "❌ Algunos tests fallaron"
+            exit 1
+          fi
+
+          echo "✅ Todos los tests pasaron exitosamente"

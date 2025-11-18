@@ -1,0 +1,152 @@
+# Docker Compose for AWS EC2 Infrastructure Services
+# This file deploys Config Server, Eureka Server, and monitoring on a single t2.micro instance
+version: '3.8'
+
+services:
+  config-server:
+    image: ${DOCKER_REGISTRY:-youruser}/config-server:${TAG:-latest}
+    container_name: config-server
+    ports:
+      - "8889:8889"
+    environment:
+      JAVA_OPTS: "-Xmx200m -Xms150m -XX:+UseG1GC -XX:+UseStringDeduplication"
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      # Config server needs access to git repo
+      SPRING_CLOUD_CONFIG_SERVER_GIT_URI: ${CONFIG_GIT_URI:-https://github.com/yourusername/arka-config-repo}
+      SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL: ${CONFIG_GIT_BRANCH:-main}
+    mem_limit: 250m
+    mem_reservation: 200m
+    cpus: 0.3
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8889/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - arka-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  eureka-server:
+    image: ${DOCKER_REGISTRY:-youruser}/eureka-server:${TAG:-latest}
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      JAVA_OPTS: "-Xmx200m -Xms150m -XX:+UseG1GC -XX:+UseStringDeduplication"
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      # Eureka will fetch config from config-server
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8889
+      SPRING_APPLICATION_NAME: eureka-server
+    mem_limit: 250m
+    mem_reservation: 200m
+    cpus: 0.3
+    restart: unless-stopped
+    depends_on:
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    networks:
+      - arka-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=7d'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    mem_limit: 150m
+    mem_reservation: 100m
+    cpus: 0.2
+    restart: unless-stopped
+    depends_on:
+      - config-server
+      - eureka-server
+    networks:
+      - arka-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/host'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro
+    mem_limit: 50m
+    mem_reservation: 30m
+    cpus: 0.1
+    restart: unless-stopped
+    networks:
+      - arka-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-reverse-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    mem_limit: 50m
+    mem_reservation: 30m
+    cpus: 0.1
+    restart: unless-stopped
+    depends_on:
+      - config-server
+      - eureka-server
+    networks:
+      - arka-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+networks:
+  arka-network:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+    driver: local

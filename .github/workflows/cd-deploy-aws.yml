@@ -1,0 +1,288 @@
+name: CD - Deploy to AWS EC2
+
+on:
+  workflow_run:
+    workflows: ["CD - Build Docker Images"]
+    types:
+      - completed
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to deploy (or "all" for all services)'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - config-server
+          - eureka-server
+          - api-gateway
+          - auth-server
+          - product-service
+          - customer-service
+          - inventory-service
+          - order-service
+          - cart-service
+          - notification-service
+          - report-service
+          - monitoring
+
+jobs:
+  check-build-status:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    outputs:
+      should_deploy: ${{ steps.check.outputs.should_deploy }}
+      deploy_tag: ${{ steps.tag.outputs.deploy_tag }}
+    steps:
+      - name: Check deployment conditions
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.workflow_run.conclusion }}" = "success" ]; then
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate deployment tag
+        id: tag
+        run: |
+          TAG=$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}
+          echo "deploy_tag=$TAG" >> $GITHUB_OUTPUT
+          echo "📦 Deployment tag: $TAG"
+
+  deploy-to-ec2:
+    needs: check-build-status
+    if: needs.check-build-status.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.AWS_EC2_SSH_KEY }}
+          SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
+          SSH_USER: ${{ secrets.AWS_EC2_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+
+      - name: Create deployment directory
+        env:
+          SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
+          SSH_USER: ${{ secrets.AWS_EC2_USER }}
+        run: |
+          ssh $SSH_USER@$SSH_HOST "mkdir -p ~/arka-deployment"
+
+      - name: Copy deployment files to EC2
+        env:
+          SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
+          SSH_USER: ${{ secrets.AWS_EC2_USER }}
+        run: |
+          scp -r arka-microservicios/docker-compose-production.yml $SSH_USER@$SSH_HOST:~/arka-deployment/
+          scp -r arka-microservicios/prometheus $SSH_USER@$SSH_HOST:~/arka-deployment/
+          scp -r arka-microservicios/grafana $SSH_USER@$SSH_HOST:~/arka-deployment/
+          scp -r arka-microservicios/nginx $SSH_USER@$SSH_HOST:~/arka-deployment/
+
+      - name: Create .env file on EC2
+        env:
+          SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
+          SSH_USER: ${{ secrets.AWS_EC2_USER }}
+        run: |
+          ssh $SSH_USER@$SSH_HOST << 'EOF'
+          cat > ~/arka-deployment/.env << 'ENVEOF'
+          DOCKER_REGISTRY=${{ secrets.DOCKER_REGISTRY }}
+          TAG=${{ needs.check-build-status.outputs.deploy_tag }}
+          SPRING_PROFILES_ACTIVE=prod
+          CONFIG_GIT_URI=${{ secrets.CONFIG_GIT_URI }}
+          CONFIG_GIT_BRANCH=main
+          RAILWAY_POSTGRES_URL=${{ secrets.RAILWAY_POSTGRES_URL }}
+          RAILWAY_POSTGRES_USER=${{ secrets.RAILWAY_POSTGRES_USER }}
+          RAILWAY_POSTGRES_PASSWORD=${{ secrets.RAILWAY_POSTGRES_PASSWORD }}
+          MONGODB_ATLAS_URI=${{ secrets.MONGODB_ATLAS_URI }}
+          CLOUDAMQP_URL=${{ secrets.CLOUDAMQP_URL }}
+          MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          EUREKA_HOSTNAME=${{ secrets.AWS_EC2_HOST }}
+          GRAFANA_ADMIN_USER=${{ secrets.GRAFANA_ADMIN_USER }}
+          GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          GRAFANA_ROOT_URL=http://${{ secrets.AWS_EC2_HOST }}:3000
+          ENVEOF
+          EOF
+
+      - name: Pull latest Docker images
+        env:
+          SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
+          SSH_USER: ${{ secrets.AWS_EC2_USER }}
+          SERVICE: ${{ github.event.inputs.service }}
+        run: |
+          ssh $SSH_USER@$SSH_HOST << 'EOF'
+          cd ~/arka-deployment
+
+          if [ "${{ env.SERVICE }}" = "all" ] || [ -z "${{ env.SERVICE }}" ]; then
+            echo "🔄 Pulling all service images..."
+            docker-compose -f docker-compose-production.yml pull
+          else
+            echo "🔄 Pulling ${{ env.SERVICE }} image..."
+            docker-compose -f docker-compose-production.yml pull ${{ env.SERVICE }}
+          fi
+          EOF
+
+      - name: Deploy services
+        env:
+          SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
+          SSH_USER: ${{ secrets.AWS_EC2_USER }}
+          SERVICE: ${{ github.event.inputs.service }}
+        run: |
+          ssh $SSH_USER@$SSH_HOST << 'EOF'
+          cd ~/arka-deployment
+
+          if [ "${{ env.SERVICE }}" = "all" ] || [ -z "${{ env.SERVICE }}" ]; then
+            echo "🚀 Deploying all services..."
+            docker-compose -f docker-compose-production.yml up -d
+          else
+            echo "🚀 Deploying ${{ env.SERVICE }}..."
+            docker-compose -f docker-compose-production.yml up -d --no-deps ${{ env.SERVICE }}
+          fi
+          EOF
+
+      - name: Wait for services to be healthy
+        env:
+          SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
+          SSH_USER: ${{ secrets.AWS_EC2_USER }}
+        run: |
+          ssh $SSH_USER@$SSH_HOST << 'EOF'
+          cd ~/arka-deployment
+
+          echo "⏳ Waiting for services to be healthy (max 5 minutes)..."
+          timeout=300
+          elapsed=0
+
+          while [ $elapsed -lt $timeout ]; do
+            unhealthy=$(docker-compose -f docker-compose-production.yml ps | grep -c "unhealthy" || true)
+            starting=$(docker-compose -f docker-compose-production.yml ps | grep -c "health: starting" || true)
+
+            if [ $unhealthy -eq 0 ] && [ $starting -eq 0 ]; then
+              echo "✅ All services are healthy!"
+              break
+            fi
+
+            echo "Waiting... ($elapsed/$timeout seconds)"
+            sleep 10
+            elapsed=$((elapsed + 10))
+          done
+
+          if [ $elapsed -ge $timeout ]; then
+            echo "⚠️ Timeout waiting for services to be healthy"
+            docker-compose -f docker-compose-production.yml ps
+            exit 1
+          fi
+          EOF
+
+      - name: Verify deployment
+        env:
+          SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
+          SSH_USER: ${{ secrets.AWS_EC2_USER }}
+        run: |
+          ssh $SSH_USER@$SSH_HOST << 'EOF'
+          cd ~/arka-deployment
+
+          echo "📊 Deployment Status:"
+          docker-compose -f docker-compose-production.yml ps
+
+          echo ""
+          echo "💾 Memory Usage:"
+          docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
+
+          echo ""
+          echo "🔍 Health Checks:"
+          for service in config-server eureka-server api-gateway auth-server; do
+            port=""
+            case $service in
+              config-server) port=8889 ;;
+              eureka-server) port=8761 ;;
+              api-gateway) port=8080 ;;
+              auth-server) port=8081 ;;
+            esac
+
+            if [ -n "$port" ]; then
+              echo -n "$service ($port): "
+              curl -s -o /dev/null -w "%{http_code}" http://localhost:$port/actuator/health || echo "FAILED"
+            fi
+          done
+          EOF
+
+      - name: Cleanup old images
+        env:
+          SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
+          SSH_USER: ${{ secrets.AWS_EC2_USER }}
+        run: |
+          ssh $SSH_USER@$SSH_HOST << 'EOF'
+          echo "🧹 Cleaning up old Docker images..."
+          docker image prune -af --filter "until=24h"
+          EOF
+
+      - name: Send deployment notification
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ Deployment completed successfully!"
+            echo "🌐 Services available at:"
+            echo "   - Eureka: http://${{ secrets.AWS_EC2_HOST }}:8761"
+            echo "   - API Gateway: http://${{ secrets.AWS_EC2_HOST }}:8080"
+            echo "   - Prometheus: http://${{ secrets.AWS_EC2_HOST }}:9090"
+            echo "   - Grafana: http://${{ secrets.AWS_EC2_HOST }}:3000"
+          else
+            echo "❌ Deployment failed!"
+          fi
+
+  rollback:
+    needs: [check-build-status, deploy-to-ec2]
+    if: failure() && needs.check-build-status.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.AWS_EC2_SSH_KEY }}
+          SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
+          SSH_USER: ${{ secrets.AWS_EC2_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+
+      - name: Rollback to previous version
+        env:
+          SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
+          SSH_USER: ${{ secrets.AWS_EC2_USER }}
+        run: |
+          ssh $SSH_USER@$SSH_HOST << 'EOF'
+          cd ~/arka-deployment
+
+          echo "🔄 Rolling back to previous version..."
+
+          # Restore from backup (if exists)
+          if [ -f docker-compose-production.yml.backup ]; then
+            cp docker-compose-production.yml.backup docker-compose-production.yml
+            docker-compose -f docker-compose-production.yml up -d
+            echo "✅ Rollback completed"
+          else
+            echo "⚠️ No backup found, cannot rollback"
+            exit 1
+          fi
+          EOF
+
+      - name: Notify rollback
+        run: |
+          echo "🔙 Deployment rolled back due to failure"
+          # Add Slack/Discord webhook here if needed
