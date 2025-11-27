@@ -21,11 +21,14 @@ spring:
         format_sql: true
 
   # RabbitMQ Configuration
+  # Support both individual params and CloudAMQP AMQP URL format
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
+    addresses: ${RABBITMQ_ADDRESSES:${CLOUDAMQP_URL:amqp://localhost:5672}}
     username: ${RABBITMQ_USERNAME:arka_user}
     password: ${RABBITMQ_PASSWORD:arka_password}
+    # Connection settings for cloud environments
+    connection-timeout: 30000
+    requested-heartbeat: 30
 
 # URLs de servicios externos
 services:

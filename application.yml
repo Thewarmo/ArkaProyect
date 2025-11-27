@@ -1,42 +1,62 @@
 # Configuración compartida por todos los microservicios
-  spring:
-    datasource:
-      driver-class-name: org.postgresql.Driver
-      username: arka_user
-      password: arka_password
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    # Railway PostgreSQL connection (use environment variables)
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://centerbeam.proxy.rlwy.net:34241/railway?sslmode=require}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:HMroWPVhjEVmVdDIPhhPABBtEbBKirFd}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1800000
 
-    jpa:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
       hibernate:
-        ddl-auto: update
-      show-sql: true
-      properties:
-        hibernate:
-          dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
-  # Actuator
-  management:
-    endpoints:
-      web:
-        exposure:
-          include: "*"
-    endpoint:
-      health:
-        show-details: always
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+      environment: ${SPRING_PROFILES_ACTIVE:dev}
 
-  # Eureka Client - Configuración común
-  eureka:
-    client:
-      service-url:
-        defaultZone: http://localhost:8761/eureka/
-      fetch-registry: true
-      register-with-eureka: true
-    instance:
-      prefer-ip-address: true
-      lease-renewal-interval-in-seconds: 30
-      lease-expiration-duration-in-seconds: 90
+# Eureka Client - Configuración común
+eureka:
+  client:
+    service-url:
+      # AWS EC2 Elastic IP for Eureka Server
+      defaultZone: ${EUREKA_SERVER_URL:http://52.72.28.32:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    # For Railway deployment, use hostname instead of IP
+    prefer-ip-address: ${EUREKA_PREFER_IP:false}
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:${spring.application.name}}
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+    # Use Railway provided domain for instance registration
+    instance-id: ${spring.application.name}:${RAILWAY_PUBLIC_DOMAIN:localhost}:${server.port}
 
-  # Logging
-  logging:
-    level:
-      com.arka: DEBUG
-      org.springframework.cloud: DEBUG
+# Logging
+logging:
+  level:
+    com.arka: DEBUG
+    org.springframework.cloud: DEBUG
