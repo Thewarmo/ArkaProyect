@@ -7,7 +7,8 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/arka_carts
+      # Use MongoDB Atlas M0 free tier (or Railway MongoDB)
+      uri: ${MONGODB_URI:mongodb://localhost:27017/arka_carts}
       auto-index-creation: true
 
 # URLs de servicios externos
