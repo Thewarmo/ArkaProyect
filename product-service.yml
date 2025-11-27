@@ -1,22 +1,22 @@
- # Configuración específica del Product Service
-  spring:
-    datasource:
-      url: jdbc:postgresql://localhost:5432/arka_products
-      username: arka_user
-      password: arka_password
+# Configuración específica del Product Service (PostgreSQL)
+server:
+  port: 8081
 
-    jpa:
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://centerbeam.proxy.rlwy.net:34241/railway?sslmode=require}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:HMroWPVhjEVmVdDIPhhPABBtEbBKirFd}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
       hibernate:
-        ddl-auto: create-drop
-      show-sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
-  server:
-    port: 8081
-
-  eureka:
-    client:
-      enabled: false
-
-  logging:
-    level:
-      com.arka.product_service: DEBUG
+logging:
+  level:
+    com.arka.product_service: DEBUG
