@@ -55,100 +55,99 @@ scrape_configs:
           tier: 'infrastructure'
           platform: 'aws-ec2'
 
-  # API Gateway (Railway - using public URL)
+  # API Gateway (AWS EC2)
   - job_name: 'api-gateway'
     metrics_path: '/actuator/prometheus'
-    scheme: https
     static_configs:
-      - targets: ['${API_GATEWAY_URL}']  # Set via environment variable
+      - targets: ['api-gateway:8080']
         labels:
           service: 'api-gateway'
           tier: 'gateway'
-          platform: 'railway'
+          platform: 'aws-ec2'
 
-  # Auth Server (Railway - using public URL)
+  # Auth Server (Railway)
   - job_name: 'auth-server'
     metrics_path: '/actuator/prometheus'
     scheme: https
     static_configs:
-      - targets: ['${AUTH_SERVER_URL}']  # Set via environment variable
+      - targets: ['auth-service-production-5ff9.up.railway.app']
         labels:
           service: 'auth-server'
           tier: 'business'
           platform: 'railway'
 
-  # Product Service (Railway - using public URL)
+  # Product Service (Railway)
   - job_name: 'product-service'
     metrics_path: '/actuator/prometheus'
     scheme: https
     static_configs:
-      - targets: ['${PRODUCT_SERVICE_URL}']  # Set via environment variable
+      - targets: ['product-service-production-7298.up.railway.app']
         labels:
           service: 'product-service'
           tier: 'business'
           platform: 'railway'
 
-  # Customer Service (Railway - using public URL)
+  # Customer Service (Railway)
   - job_name: 'customer-service'
     metrics_path: '/actuator/prometheus'
     scheme: https
     static_configs:
-      - targets: ['${CUSTOMER_SERVICE_URL}']  # Set via environment variable
+      - targets: ['customer-service-production-c816.up.railway.app']
         labels:
           service: 'customer-service'
           tier: 'business'
           platform: 'railway'
 
-  # Inventory Service (Railway - using public URL)
+  # Inventory Service (Railway)
   - job_name: 'inventory-service'
     metrics_path: '/actuator/prometheus'
     scheme: https
     static_configs:
-      - targets: ['${INVENTORY_SERVICE_URL}']  # Set via environment variable
+      - targets: ['inventory-service-production-0526.up.railway.app']
         labels:
           service: 'inventory-service'
           tier: 'business'
           platform: 'railway'
 
-  # Order Service (Railway - using public URL)
+  # Order Service (Railway)
   - job_name: 'order-service'
     metrics_path: '/actuator/prometheus'
     scheme: https
     static_configs:
-      - targets: ['${ORDER_SERVICE_URL}']  # Set via environment variable
+      - targets: ['order-service-production-ed3a.up.railway.app']
         labels:
           service: 'order-service'
           tier: 'business'
           platform: 'railway'
 
-  # Cart Service (Railway - using public URL)
+  # Cart Service (Railway)
   - job_name: 'cart-service'
     metrics_path: '/actuator/prometheus'
     scheme: https
     static_configs:
-      - targets: ['${CART_SERVICE_URL}']  # Set via environment variable
+      - targets: ['cart-service-production-0c54.up.railway.app']
         labels:
           service: 'cart-service'
           tier: 'business'
           platform: 'railway'
 
-  # Notification Service (Railway - using public URL)
+  # Notification Service (Railway)
   - job_name: 'notification-service'
     metrics_path: '/actuator/prometheus'
     scheme: https
     static_configs:
-      - targets: ['${NOTIFICATION_SERVICE_URL}']  # Set via environment variable
+      - targets: ['notification-service-production-ab1a.up.railway.app']
         labels:
           service: 'notification-service'
           tier: 'business'
           platform: 'railway'
 
-  # Report Service (Railway - using public URL)
+  # Report Service (Railway)
   - job_name: 'report-service'
     metrics_path: '/actuator/prometheus'
     scheme: https
     static_configs:
-      - targets: ['${REPORT_SERVICE_URL}']  # Set via environment variable
+      - targets: ['report-service-production-f678.up.railway.app']
         labels:
           service: 'report-service'
           tier: 'business'
