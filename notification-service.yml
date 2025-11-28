@@ -50,6 +50,16 @@ notification:
     name: "Arka - Distribuidora de PC"
   enabled: true
 
+# Actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
 # Logging
 logging:
   level:
