@@ -38,7 +38,8 @@ dependencies {
 
     // Spring Cloud Config Client
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
-    // Eureka Client    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    // Eureka Client
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 
     // Spring Scheduling
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
