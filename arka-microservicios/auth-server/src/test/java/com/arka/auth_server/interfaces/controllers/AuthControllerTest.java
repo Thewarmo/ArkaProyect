@@ -77,7 +77,7 @@ class AuthControllerTest {
                 .userId(1L)
                 .username("testuser")
                 .email("test@example.com")
-                .role("CUSTOMER")
+                .role(Role.CUSTOMER)
                 .message("Authentication successful")
                 .build();
     }
@@ -213,7 +213,7 @@ class AuthControllerTest {
                 .userId(1L)
                 .username("testuser")
                 .email("test@example.com")
-                .role("CUSTOMER")
+                .role(Role.CUSTOMER)
                 .message("Token is valid")
                 .build();
 
@@ -242,7 +242,7 @@ class AuthControllerTest {
                 .userId(1L)
                 .username("testuser")
                 .email("test@example.com")
-                .role("CUSTOMER")
+                .role(Role.CUSTOMER)
                 .message("Token is valid")
                 .build();
 
@@ -300,7 +300,7 @@ class AuthControllerTest {
                 .userId(2L)
                 .username("testuser")
                 .email("test@example.com")
-                .role("ADMIN")
+                .role(Role.ADMIN)
                 .message("Admin registration successful")
                 .build();
 

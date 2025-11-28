@@ -49,6 +49,9 @@ class OrderJPARepositoryTest {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        registry.add("spring.cloud.config.enabled", () -> "false");
+        registry.add("eureka.client.enabled", () -> "false");
     }
 
     @Autowired

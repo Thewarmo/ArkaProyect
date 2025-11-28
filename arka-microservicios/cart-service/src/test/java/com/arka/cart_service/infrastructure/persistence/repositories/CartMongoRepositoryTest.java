@@ -43,6 +43,8 @@ class CartMongoRepositoryTest {
     @DynamicPropertySource
     static void setProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.mongodb.uri", mongoDBContainer::getReplicaSetUrl);
+        registry.add("spring.cloud.config.enabled", () -> "false");
+        registry.add("eureka.client.enabled", () -> "false");
     }
 
     @Autowired
