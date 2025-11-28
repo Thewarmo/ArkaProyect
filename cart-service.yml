@@ -7,37 +7,26 @@ spring:
 
   data:
     mongodb:
-      # Use MongoDB Atlas M0 free tier (or Railway MongoDB)
-      uri: ${MONGODB_URI:mongodb://localhost:27017/arka_carts}
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/arka_carts}
       auto-index-creation: true
 
-# URLs de servicios externos
-services:
-  customer-service:
-    url: http://localhost:8083
-  product-service:
-    url: http://localhost:8081
-  inventory-service:
-    url: http://localhost:8084
-  order-service:
-    url: http://localhost:8085
-  notification-service:
-    url: http://localhost:8087
-
-# Configuración de carritos abandonados
-carts:
-  abandoned:
-    threshold-days: 3
-    schedule:
-      cron: "0 0 9 * * *"  # Cada día a las 9:00 AM
-      enabled: true
+# Eureka Client
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://52.72.28.32:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: false
+    hostname: ${spring.application.name}
 
 # Actuator endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,scheduledtasks
+        include: health,info,metrics
   endpoint:
     health:
       show-details: always

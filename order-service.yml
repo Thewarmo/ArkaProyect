@@ -6,9 +6,9 @@ spring:
     name: order-service
 
   datasource:
-    url: jdbc:postgresql://centerbeam.proxy.rlwy.net:34241/railway
-    username: postgres
-    password: HMroWPVhjEVmVdDIPhhPABBtEbBKirFd
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://centerbeam.proxy.rlwy.net:34241/railway?sslmode=require}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:HMroWPVhjEVmVdDIPhhPABBtEbBKirFd}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -20,24 +20,26 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
-  # RabbitMQ Configuration
-  # Support both individual params and CloudAMQP AMQP URL format
+  # RabbitMQ Configuration for CloudAMQP
   rabbitmq:
-    addresses: ${RABBITMQ_ADDRESSES:${CLOUDAMQP_URL:amqp://localhost:5672}}
-    username: ${RABBITMQ_USERNAME:arka_user}
-    password: ${RABBITMQ_PASSWORD:arka_password}
-    # Connection settings for cloud environments
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+    virtual-host: ${SPRING_RABBITMQ_VIRTUAL_HOST:/}
     connection-timeout: 30000
     requested-heartbeat: 30
 
-# URLs de servicios externos
-services:
-  inventory-service:
-    url: http://localhost:8084
-  customer-service:
-    url: http://localhost:8083
-  product-service:
-    url: http://localhost:8081
+# Eureka Client
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://52.72.28.32:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: false
+    hostname: ${spring.application.name}
 
 # Actuator endpoints
 management:
@@ -53,4 +55,4 @@ management:
 logging:
   level:
     com.arka.order_service: DEBUG
-    org.hibernate.SQL: DEBUG
+    org.springframework.amqp: DEBUG

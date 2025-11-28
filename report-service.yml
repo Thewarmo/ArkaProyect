@@ -6,9 +6,9 @@ spring:
     name: report-service
 
   datasource:
-    url: jdbc:postgresql://centerbeam.proxy.rlwy.net:34241/railway
-    username: postgres
-    password: HMroWPVhjEVmVdDIPhhPABBtEbBKirFd
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://centerbeam.proxy.rlwy.net:34241/railway?sslmode=require}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:HMroWPVhjEVmVdDIPhhPABBtEbBKirFd}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -18,32 +18,29 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
 
-# URLs de servicios externos
-services:
-  order-service:
-    url: http://localhost:8085
-  product-service:
-    url: http://localhost:8081
-  customer-service:
-    url: http://localhost:8083
-
-# Configuración de reportes
+# Reports export configuration
 reports:
-  weekly:
-    schedule:
-      cron: "0 0 8 * * MON"  # Cada lunes a las 8:00 AM
-      enabled: true
   export:
-    temp-directory: ${java.io.tmpdir}/arka-reports
+    temp-directory: ${REPORTS_TEMP_DIR:/tmp/reports}
+
+# Eureka Client
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://52.72.28.32:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: false
+    hostname: ${spring.application.name}
 
 # Actuator endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,scheduledtasks
+        include: health,info,metrics
   endpoint:
     health:
       show-details: always
@@ -52,4 +49,3 @@ management:
 logging:
   level:
     com.arka.report_service: DEBUG
-    org.springframework.scheduling: DEBUG
