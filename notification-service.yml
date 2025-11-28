@@ -1,19 +1,7 @@
+server:
+  port: 8087
+
 spring:
-  datasource:
-    url: jdbc:postgresql://centerbeam.proxy.rlwy.net:34241/railway
-    username: postgres
-    password: HMroWPVhjEVmVdDIPhhPABBtEbBKirFd
-    driver-class-name: org.postgresql.Driver
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-
   # Mail configuration (Gmail SMTP)
   mail:
     host: smtp.gmail.com
@@ -31,13 +19,13 @@ spring:
           timeout: 5000
           writetimeout: 5000
 
-  # RabbitMQ Configuration
-  # Support both individual params and CloudAMQP AMQP URL format
+  # RabbitMQ Configuration for CloudAMQP
   rabbitmq:
-    addresses: ${RABBITMQ_ADDRESSES:${CLOUDAMQP_URL:amqp://localhost:5672}}
-    username: ${RABBITMQ_USERNAME:arka_user}
-    password: ${RABBITMQ_PASSWORD:arka_password}
-    # Connection settings for cloud environments
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+    virtual-host: ${SPRING_RABBITMQ_VIRTUAL_HOST:/}
     connection-timeout: 30000
     requested-heartbeat: 30
 
@@ -52,4 +40,4 @@ notification:
 logging:
   level:
     com.arka.notification_service: DEBUG
-    org.springframework.mail: DEBUG
+    org.springframework.amqp: DEBUG
