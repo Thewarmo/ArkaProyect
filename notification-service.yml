@@ -2,6 +2,9 @@ server:
   port: 8087
 
 spring:
+  application:
+    name: notification-service
+
   # Mail configuration (Gmail SMTP)
   mail:
     host: smtp.gmail.com
@@ -28,6 +31,17 @@ spring:
     virtual-host: ${SPRING_RABBITMQ_VIRTUAL_HOST:/}
     connection-timeout: 30000
     requested-heartbeat: 30
+
+# Eureka Client
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://52.72.28.32:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: false
+    hostname: ${spring.application.name}
 
 # Application configuration
 notification:

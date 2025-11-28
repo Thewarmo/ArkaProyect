@@ -6,9 +6,9 @@ spring:
     name: customer-service
 
   datasource:
-    url: jdbc:postgresql://centerbeam.proxy.rlwy.net:34241/railway
-    username: postgres
-    password: HMroWPVhjEVmVdDIPhhPABBtEbBKirFd
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://centerbeam.proxy.rlwy.net:34241/railway?sslmode=require}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:HMroWPVhjEVmVdDIPhhPABBtEbBKirFd}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -20,9 +20,16 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
-# URL del Auth Server para validación
-auth-server:
-  url: http://localhost:8082
+# Eureka Client
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://52.72.28.32:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: false
+    hostname: ${spring.application.name}
 
 # Actuator endpoints
 management:
@@ -38,4 +45,3 @@ management:
 logging:
   level:
     com.arka.customer_service: DEBUG
-    org.hibernate.SQL: DEBUG

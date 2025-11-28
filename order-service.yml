@@ -30,6 +30,17 @@ spring:
     connection-timeout: 30000
     requested-heartbeat: 30
 
+# Eureka Client
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://52.72.28.32:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: false
+    hostname: ${spring.application.name}
+
 # Actuator endpoints
 management:
   endpoints:
