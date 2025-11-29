@@ -187,8 +187,9 @@ class JwtUtilTest {
 
         String expiredToken = shortLivedJwtUtil.generateToken(1L, "testuser", "test@example.com", Role.CUSTOMER);
 
-        // When & Then
-        assertThat(jwtUtil.isTokenExpired(expiredToken)).isTrue();
+        // When & Then - Token expirado lanza ExpiredJwtException al intentar parsear
+        assertThatThrownBy(() -> jwtUtil.isTokenExpired(expiredToken))
+                .isInstanceOf(ExpiredJwtException.class);
     }
 
     @Test
@@ -200,11 +201,9 @@ class JwtUtilTest {
 
         String expiredToken = shortLivedJwtUtil.generateToken(1L, "testuser", "test@example.com", Role.CUSTOMER);
 
-        // When
-        Boolean isValid = jwtUtil.validateToken(expiredToken, "testuser");
-
-        // Then
-        assertThat(isValid).isFalse();
+        // When & Then - Token expirado lanza ExpiredJwtException
+        assertThatThrownBy(() -> jwtUtil.validateToken(expiredToken, "testuser"))
+                .isInstanceOf(ExpiredJwtException.class);
     }
 
     @Test
@@ -264,9 +263,9 @@ class JwtUtilTest {
         // Given - Mismo usuario, diferentes momentos
         String token1 = jwtUtil.generateToken(1L, "testuser", "test@example.com", Role.CUSTOMER);
 
-        // Pequeña pausa para asegurar timestamp diferente
+        // Pausa para asegurar timestamp diferente (1 segundo garantiza diferencia)
         try {
-            Thread.sleep(10);
+            Thread.sleep(1001);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
