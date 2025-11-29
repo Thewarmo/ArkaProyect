@@ -54,7 +54,6 @@ dependencies {
     testImplementation "org.testcontainers:testcontainers:${testcontainersVersion}"
     testImplementation "org.testcontainers:junit-jupiter:${testcontainersVersion}"
     testImplementation "org.testcontainers:mongodb:${testcontainersVersion}"
-    testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo.spring3x:4.11.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
