@@ -5,6 +5,7 @@ import com.arka.cart_service.infrastructure.persistence.model.CartDocument;
 import com.arka.cart_service.infrastructure.persistence.model.CartItemDocument;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -31,9 +32,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - Operaciones CRUD con documentos
  * - Consultas personalizadas con @Query
  * - Manejo de documentos embebidos (CartItemDocument)
+ *
+ * NOTA: Este test requiere Docker y se deshabilita en CI (GitHub Actions)
  */
 @DataMongoTest
 @Testcontainers
+@DisabledIfEnvironmentVariable(named = "CI", matches = "true")
 class CartMongoRepositoryTest {
 
     @Container
@@ -140,7 +144,7 @@ class CartMongoRepositoryTest {
 
         CartDocument completedCart = CartDocument.builder()
                 .customerId(1L)
-                .status(CartStatus.COMPLETED)
+                .status(CartStatus.CONVERTED)
                 .items(Arrays.asList())
                 .totalAmount(BigDecimal.ZERO)
                 .totalItems(0)
@@ -163,7 +167,7 @@ class CartMongoRepositoryTest {
         // Given - Solo carrito completado
         CartDocument completedCart = CartDocument.builder()
                 .customerId(1L)
-                .status(CartStatus.COMPLETED)
+                .status(CartStatus.CONVERTED)
                 .items(Arrays.asList())
                 .totalAmount(BigDecimal.ZERO)
                 .totalItems(0)
@@ -236,7 +240,7 @@ class CartMongoRepositoryTest {
         // Carrito completado antiguo (no debe encontrarse por status)
         CartDocument oldCompletedCart = CartDocument.builder()
                 .customerId(3L)
-                .status(CartStatus.COMPLETED)
+                .status(CartStatus.CONVERTED)
                 .items(Arrays.asList())
                 .totalAmount(BigDecimal.ZERO)
                 .totalItems(0)
