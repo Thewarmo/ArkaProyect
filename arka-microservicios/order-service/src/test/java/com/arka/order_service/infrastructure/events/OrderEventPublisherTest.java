@@ -4,6 +4,7 @@ import com.arka.order_service.infrastructure.config.RabbitMQConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,9 +31,12 @@ import static org.awaitility.Awaitility.await;
  * - Verificación de mensajes en las colas
  * - Deserialización de mensajes JSON
  * - Uso de Awaitility para operaciones asíncronas
+ *
+ * NOTA: Este test requiere Docker y se deshabilita en CI (GitHub Actions)
  */
 @SpringBootTest
 @Testcontainers
+@DisabledIfEnvironmentVariable(named = "CI", matches = "true")
 class OrderEventPublisherTest {
 
     @Container
