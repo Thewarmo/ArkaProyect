@@ -64,14 +64,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure SSH Agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.AWS_EC2_SSH_KEY }}
-
-      - name: Add EC2 host to known hosts
+      - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
+          echo "${{ secrets.AWS_EC2_SSH_KEY }}" | base64 -d > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.AWS_EC2_HOST }} >> ~/.ssh/known_hosts
 
       - name: Create deployment directory
@@ -249,14 +246,11 @@ jobs:
     if: failure() && needs.check-build-status.outputs.should_deploy == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Configure SSH Agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.AWS_EC2_SSH_KEY }}
-
-      - name: Add EC2 host to known hosts
+      - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
+          echo "${{ secrets.AWS_EC2_SSH_KEY }}" | base64 -d > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.AWS_EC2_HOST }} >> ~/.ssh/known_hosts
 
       - name: Rollback to previous version
