@@ -115,6 +115,14 @@ jobs:
           ENVEOF
           EOF
 
+      - name: Login to GHCR on EC2
+        env:
+          SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
+          SSH_USER: ${{ secrets.AWS_EC2_USER }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ssh $SSH_USER@$SSH_HOST "echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin"
+
       - name: Pull latest Docker images
         env:
           SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
@@ -123,6 +131,10 @@ jobs:
         run: |
           ssh $SSH_USER@$SSH_HOST << 'EOF'
           cd ~/arka-deployment
+
+          # Set environment variables for docker-compose
+          export DOCKER_REGISTRY=ghcr.io/thewarmo
+          export TAG=latest
 
           if [ "${{ env.SERVICE }}" = "all" ] || [ -z "${{ env.SERVICE }}" ]; then
             echo "🔄 Pulling all service images..."
