@@ -64,16 +64,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure SSH
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.AWS_EC2_SSH_KEY }}
-          SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
-          SSH_USER: ${{ secrets.AWS_EC2_USER }}
+      - name: Configure SSH Agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.AWS_EC2_SSH_KEY }}
+
+      - name: Add EC2 host to known hosts
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.AWS_EC2_HOST }} >> ~/.ssh/known_hosts
 
       - name: Create deployment directory
         env:
@@ -250,16 +249,15 @@ jobs:
     if: failure() && needs.check-build-status.outputs.should_deploy == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Configure SSH
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.AWS_EC2_SSH_KEY }}
-          SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
-          SSH_USER: ${{ secrets.AWS_EC2_USER }}
+      - name: Configure SSH Agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.AWS_EC2_SSH_KEY }}
+
+      - name: Add EC2 host to known hosts
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.AWS_EC2_HOST }} >> ~/.ssh/known_hosts
 
       - name: Rollback to previous version
         env:
