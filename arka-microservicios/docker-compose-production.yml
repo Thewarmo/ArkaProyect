@@ -15,18 +15,17 @@ services:
       - "8889:8889"
     environment:
       JAVA_OPTS: >-
-        -Xmx128m -Xms64m
+        -Xmx384m -Xms128m
         -XX:+UseSerialGC
-        -XX:MaxMetaspaceSize=64m
-        -XX:+UseStringDeduplication
+        -XX:MaxMetaspaceSize=96m
         -Djava.security.egd=file:/dev/./urandom
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       SPRING_CLOUD_CONFIG_SERVER_GIT_URI: ${CONFIG_GIT_URI:-https://github.com/yourusername/arka-config-repo}
       SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL: ${CONFIG_GIT_BRANCH:-main}
       SPRING_CLOUD_CONFIG_SERVER_GIT_USERNAME: ${CONFIG_GIT_USERNAME:-}
       SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD: ${CONFIG_GIT_PASSWORD:-}
-    mem_limit: 160m
-    mem_reservation: 128m
+    mem_limit: 512m
+    mem_reservation: 384m
     cpus: 0.3
     restart: unless-stopped
     healthcheck:
