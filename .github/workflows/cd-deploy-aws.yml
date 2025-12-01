@@ -93,10 +93,9 @@ jobs:
           SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
           SSH_USER: ${{ secrets.AWS_EC2_USER }}
         run: |
-          ssh $SSH_USER@$SSH_HOST << 'EOF'
-          cat > ~/arka-deployment/.env << 'ENVEOF'
-          DOCKER_REGISTRY=${{ secrets.DOCKER_REGISTRY }}
-          TAG=${{ needs.check-build-status.outputs.deploy_tag }}
+          ssh $SSH_USER@$SSH_HOST "cat > ~/arka-deployment/.env << 'ENVEOF'
+          DOCKER_REGISTRY=ghcr.io/thewarmo
+          TAG=latest
           SPRING_PROFILES_ACTIVE=prod
           CONFIG_GIT_URI=${{ secrets.CONFIG_GIT_URI }}
           CONFIG_GIT_BRANCH=main
@@ -112,8 +111,7 @@ jobs:
           GRAFANA_ADMIN_USER=${{ secrets.GRAFANA_ADMIN_USER }}
           GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
           GRAFANA_ROOT_URL=http://${{ secrets.AWS_EC2_HOST }}:3000
-          ENVEOF
-          EOF
+          ENVEOF"
 
       - name: Login to GHCR on EC2
         env:
@@ -129,7 +127,7 @@ jobs:
           SSH_USER: ${{ secrets.AWS_EC2_USER }}
           SERVICE: ${{ github.event.inputs.service }}
         run: |
-          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && DOCKER_REGISTRY=ghcr.io/thewarmo TAG=latest docker-compose -f docker-compose-production.yml pull"
+          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && docker-compose --env-file .env -f docker-compose-production.yml pull"
 
       - name: Stop and remove existing containers
         env:
@@ -144,7 +142,7 @@ jobs:
           SSH_USER: ${{ secrets.AWS_EC2_USER }}
           SERVICE: ${{ github.event.inputs.service }}
         run: |
-          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && DOCKER_REGISTRY=ghcr.io/thewarmo TAG=latest docker-compose -f docker-compose-production.yml up -d"
+          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && docker-compose --env-file .env -f docker-compose-production.yml up -d"
 
       - name: Wait for services to be healthy
         env:
