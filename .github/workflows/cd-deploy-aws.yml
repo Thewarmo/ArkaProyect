@@ -166,8 +166,8 @@ jobs:
           ssh $SSH_USER@$SSH_HOST << 'EOF'
           cd ~/arka-deployment
 
-          echo "⏳ Waiting for infrastructure services to be healthy (max 5 minutes)..."
-          timeout=300
+          echo "⏳ Waiting for infrastructure services to be healthy (max 10 minutes)..."
+          timeout=600
           elapsed=0
 
           while [ $elapsed -lt $timeout ]; do
