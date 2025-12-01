@@ -131,6 +131,13 @@ jobs:
         run: |
           ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && DOCKER_REGISTRY=ghcr.io/thewarmo TAG=latest docker-compose -f docker-compose-production.yml pull"
 
+      - name: Stop and remove existing containers
+        env:
+          SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
+          SSH_USER: ${{ secrets.AWS_EC2_USER }}
+        run: |
+          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && docker-compose -f docker-compose-production.yml down --remove-orphans 2>/dev/null || true"
+
       - name: Deploy services
         env:
           SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
