@@ -83,10 +83,9 @@ jobs:
           SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
           SSH_USER: ${{ secrets.AWS_EC2_USER }}
         run: |
-          scp -r arka-microservicios/docker-compose-production.yml $SSH_USER@$SSH_HOST:~/arka-deployment/
+          scp -r arka-microservicios/docker-compose-infra.yml $SSH_USER@$SSH_HOST:~/arka-deployment/
           scp -r arka-microservicios/prometheus $SSH_USER@$SSH_HOST:~/arka-deployment/
           scp -r arka-microservicios/grafana $SSH_USER@$SSH_HOST:~/arka-deployment/
-          scp -r arka-microservicios/nginx $SSH_USER@$SSH_HOST:~/arka-deployment/
 
       - name: Create .env file on EC2
         env:
@@ -140,16 +139,16 @@ jobs:
           SSH_USER: ${{ secrets.AWS_EC2_USER }}
           SERVICE: ${{ github.event.inputs.service }}
         run: |
-          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && docker-compose --env-file .env -f docker-compose-production.yml pull"
+          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && docker-compose --env-file .env -f docker-compose-infra.yml pull"
 
       - name: Stop and remove existing containers
         env:
           SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
           SSH_USER: ${{ secrets.AWS_EC2_USER }}
         run: |
-          ssh $SSH_USER@$SSH_HOST "docker stop config-server eureka-server api-gateway auth-server product-service customer-service inventory-service order-service cart-service notification-service report-service prometheus grafana nginx-reverse-proxy 2>/dev/null || true"
-          ssh $SSH_USER@$SSH_HOST "docker rm -f config-server eureka-server api-gateway auth-server product-service customer-service inventory-service order-service cart-service notification-service report-service prometheus grafana nginx-reverse-proxy 2>/dev/null || true"
-          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && docker-compose -f docker-compose-production.yml down --remove-orphans -v 2>/dev/null || true"
+          ssh $SSH_USER@$SSH_HOST "docker stop config-server eureka-server api-gateway prometheus grafana 2>/dev/null || true"
+          ssh $SSH_USER@$SSH_HOST "docker rm -f config-server eureka-server api-gateway prometheus grafana 2>/dev/null || true"
+          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && docker-compose -f docker-compose-infra.yml down --remove-orphans -v 2>/dev/null || true"
 
       - name: Deploy services
         env:
@@ -157,7 +156,7 @@ jobs:
           SSH_USER: ${{ secrets.AWS_EC2_USER }}
           SERVICE: ${{ github.event.inputs.service }}
         run: |
-          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && docker-compose --env-file .env -f docker-compose-production.yml up -d"
+          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && docker-compose --env-file .env -f docker-compose-infra.yml up -d"
 
       - name: Wait for services to be healthy
         env:
@@ -167,16 +166,16 @@ jobs:
           ssh $SSH_USER@$SSH_HOST << 'EOF'
           cd ~/arka-deployment
 
-          echo "⏳ Waiting for services to be healthy (max 5 minutes)..."
+          echo "⏳ Waiting for infrastructure services to be healthy (max 5 minutes)..."
           timeout=300
           elapsed=0
 
           while [ $elapsed -lt $timeout ]; do
-            unhealthy=$(docker-compose -f docker-compose-production.yml ps | grep -c "unhealthy" || true)
-            starting=$(docker-compose -f docker-compose-production.yml ps | grep -c "health: starting" || true)
+            unhealthy=$(docker-compose -f docker-compose-infra.yml ps | grep -c "unhealthy" || true)
+            starting=$(docker-compose -f docker-compose-infra.yml ps | grep -c "health: starting" || true)
 
             if [ $unhealthy -eq 0 ] && [ $starting -eq 0 ]; then
-              echo "✅ All services are healthy!"
+              echo "✅ All infrastructure services are healthy!"
               break
             fi
 
@@ -187,7 +186,7 @@ jobs:
 
           if [ $elapsed -ge $timeout ]; then
             echo "⚠️ Timeout waiting for services to be healthy"
-            docker-compose -f docker-compose-production.yml ps
+            docker-compose -f docker-compose-infra.yml ps
             exit 1
           fi
           EOF
@@ -200,8 +199,8 @@ jobs:
           ssh $SSH_USER@$SSH_HOST << 'EOF'
           cd ~/arka-deployment
 
-          echo "📊 Deployment Status:"
-          docker-compose -f docker-compose-production.yml ps
+          echo "📊 Infrastructure Deployment Status:"
+          docker-compose -f docker-compose-infra.yml ps
 
           echo ""
           echo "💾 Memory Usage:"
@@ -209,13 +208,12 @@ jobs:
 
           echo ""
           echo "🔍 Health Checks:"
-          for service in config-server eureka-server api-gateway auth-server; do
+          for service in config-server eureka-server api-gateway; do
             port=""
             case $service in
               config-server) port=8889 ;;
               eureka-server) port=8761 ;;
               api-gateway) port=8080 ;;
-              auth-server) port=8081 ;;
             esac
 
             if [ -n "$port" ]; then

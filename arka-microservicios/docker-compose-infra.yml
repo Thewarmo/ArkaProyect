@@ -1,0 +1,180 @@
+# Docker Compose for AWS EC2 - Infrastructure Services Only
+# Config Server, Eureka Server, API Gateway, and Monitoring
+version: '3.8'
+
+services:
+  # ============================================
+  # INFRASTRUCTURE SERVICES
+  # ============================================
+
+  config-server:
+    image: ${DOCKER_REGISTRY:-ghcr.io/thewarmo}/arka-config-server:${TAG:-latest}
+    container_name: config-server
+    ports:
+      - "8889:8889"
+    environment:
+      JAVA_OPTS: >-
+        -Xmx384m -Xms128m
+        -XX:+UseSerialGC
+        -XX:MaxMetaspaceSize=96m
+        -Djava.security.egd=file:/dev/./urandom
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SPRING_CLOUD_CONFIG_SERVER_GIT_URI: ${CONFIG_GIT_URI:-https://github.com/Thewarmo/arka-config-repo}
+      SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL: ${CONFIG_GIT_BRANCH:-master}
+      SPRING_CLOUD_CONFIG_SERVER_GIT_USERNAME: ${CONFIG_GIT_USERNAME:-}
+      SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD: ${CONFIG_GIT_PASSWORD:-}
+    mem_limit: 512m
+    mem_reservation: 384m
+    cpus: 0.3
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8889/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    networks:
+      - arka-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  eureka-server:
+    image: ${DOCKER_REGISTRY:-ghcr.io/thewarmo}/arka-eureka-server:${TAG:-latest}
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      JAVA_OPTS: >-
+        -Xmx128m -Xms64m
+        -XX:+UseSerialGC
+        -XX:MaxMetaspaceSize=64m
+        -Djava.security.egd=file:/dev/./urandom
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8889
+      EUREKA_INSTANCE_HOSTNAME: ${EUREKA_HOSTNAME:-localhost}
+    mem_limit: 192m
+    mem_reservation: 128m
+    cpus: 0.3
+    restart: unless-stopped
+    depends_on:
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    networks:
+      - arka-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  api-gateway:
+    image: ${DOCKER_REGISTRY:-ghcr.io/thewarmo}/arka-api-gateway:${TAG:-latest}
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      JAVA_OPTS: >-
+        -Xmx128m -Xms64m
+        -XX:+UseSerialGC
+        -XX:MaxMetaspaceSize=64m
+        -Djava.security.egd=file:/dev/./urandom
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8889
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    mem_limit: 192m
+    mem_reservation: 128m
+    cpus: 0.4
+    restart: unless-stopped
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    networks:
+      - arka-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # ============================================
+  # MONITORING SERVICES
+  # ============================================
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=7d'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    mem_limit: 120m
+    mem_reservation: 100m
+    cpus: 0.2
+    restart: unless-stopped
+    networks:
+      - arka-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3000}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - grafana_data:/var/lib/grafana
+    mem_limit: 120m
+    mem_reservation: 100m
+    cpus: 0.2
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    networks:
+      - arka-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+networks:
+  arka-network:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
