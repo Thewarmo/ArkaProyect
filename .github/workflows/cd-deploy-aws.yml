@@ -92,26 +92,35 @@ jobs:
         env:
           SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
           SSH_USER: ${{ secrets.AWS_EC2_USER }}
+          CONFIG_GIT_URI: ${{ secrets.CONFIG_GIT_URI }}
+          RAILWAY_POSTGRES_URL: ${{ secrets.RAILWAY_POSTGRES_URL }}
+          RAILWAY_POSTGRES_USER: ${{ secrets.RAILWAY_POSTGRES_USER }}
+          RAILWAY_POSTGRES_PASSWORD: ${{ secrets.RAILWAY_POSTGRES_PASSWORD }}
+          MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
+          CLOUDAMQP_URL: ${{ secrets.CLOUDAMQP_URL }}
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
+          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
         run: |
-          ssh $SSH_USER@$SSH_HOST "cat > ~/arka-deployment/.env << 'ENVEOF'
-          DOCKER_REGISTRY=ghcr.io/thewarmo
-          TAG=latest
-          SPRING_PROFILES_ACTIVE=prod
-          CONFIG_GIT_URI=${{ secrets.CONFIG_GIT_URI }}
-          CONFIG_GIT_BRANCH=main
-          RAILWAY_POSTGRES_URL=${{ secrets.RAILWAY_POSTGRES_URL }}
-          RAILWAY_POSTGRES_USER=${{ secrets.RAILWAY_POSTGRES_USER }}
-          RAILWAY_POSTGRES_PASSWORD=${{ secrets.RAILWAY_POSTGRES_PASSWORD }}
-          MONGODB_ATLAS_URI=${{ secrets.MONGODB_ATLAS_URI }}
-          CLOUDAMQP_URL=${{ secrets.CLOUDAMQP_URL }}
-          MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
-          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          EUREKA_HOSTNAME=${{ secrets.AWS_EC2_HOST }}
-          GRAFANA_ADMIN_USER=${{ secrets.GRAFANA_ADMIN_USER }}
-          GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}
-          GRAFANA_ROOT_URL=http://${{ secrets.AWS_EC2_HOST }}:3000
-          ENVEOF"
+          ssh $SSH_USER@$SSH_HOST "echo 'DOCKER_REGISTRY=ghcr.io/thewarmo' > ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'TAG=latest' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'SPRING_PROFILES_ACTIVE=prod' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'CONFIG_GIT_URI=$CONFIG_GIT_URI' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'CONFIG_GIT_BRANCH=main' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'RAILWAY_POSTGRES_URL=$RAILWAY_POSTGRES_URL' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'RAILWAY_POSTGRES_USER=$RAILWAY_POSTGRES_USER' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'RAILWAY_POSTGRES_PASSWORD=$RAILWAY_POSTGRES_PASSWORD' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'MONGODB_ATLAS_URI=$MONGODB_ATLAS_URI' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'CLOUDAMQP_URL=$CLOUDAMQP_URL' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'MAIL_USERNAME=$MAIL_USERNAME' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'MAIL_PASSWORD=$MAIL_PASSWORD' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'JWT_SECRET=$JWT_SECRET' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'EUREKA_HOSTNAME=$SSH_HOST' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'GRAFANA_ADMIN_USER=$GRAFANA_ADMIN_USER' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'GRAFANA_ADMIN_PASSWORD=$GRAFANA_ADMIN_PASSWORD' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'GRAFANA_ROOT_URL=http://$SSH_HOST:3000' >> ~/arka-deployment/.env"
 
       - name: Login to GHCR on EC2
         env:
