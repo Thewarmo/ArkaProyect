@@ -110,7 +110,7 @@ jobs:
           ssh $SSH_USER@$SSH_HOST "echo 'TAG=latest' >> ~/arka-deployment/.env"
           ssh $SSH_USER@$SSH_HOST "echo 'SPRING_PROFILES_ACTIVE=prod' >> ~/arka-deployment/.env"
           ssh $SSH_USER@$SSH_HOST "echo 'CONFIG_GIT_URI=$CONFIG_GIT_URI' >> ~/arka-deployment/.env"
-          ssh $SSH_USER@$SSH_HOST "echo 'CONFIG_GIT_BRANCH=main' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'CONFIG_GIT_BRANCH=master' >> ~/arka-deployment/.env"
           ssh $SSH_USER@$SSH_HOST "echo 'CONFIG_GIT_USERNAME=$CONFIG_GIT_USERNAME' >> ~/arka-deployment/.env"
           ssh $SSH_USER@$SSH_HOST "echo 'CONFIG_GIT_PASSWORD=$CONFIG_GIT_PASSWORD' >> ~/arka-deployment/.env"
           ssh $SSH_USER@$SSH_HOST "echo 'RAILWAY_POSTGRES_URL=$RAILWAY_POSTGRES_URL' >> ~/arka-deployment/.env"
