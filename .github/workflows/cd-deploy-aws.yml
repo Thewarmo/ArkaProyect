@@ -147,7 +147,9 @@ jobs:
           SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
           SSH_USER: ${{ secrets.AWS_EC2_USER }}
         run: |
-          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && docker-compose -f docker-compose-production.yml down --remove-orphans -v 2>/dev/null || true; docker rm -f config-server eureka-server api-gateway auth-server product-service customer-service inventory-service order-service cart-service notification-service report-service prometheus grafana nginx-reverse-proxy 2>/dev/null || true"
+          ssh $SSH_USER@$SSH_HOST "docker stop config-server eureka-server api-gateway auth-server product-service customer-service inventory-service order-service cart-service notification-service report-service prometheus grafana nginx-reverse-proxy 2>/dev/null || true"
+          ssh $SSH_USER@$SSH_HOST "docker rm -f config-server eureka-server api-gateway auth-server product-service customer-service inventory-service order-service cart-service notification-service report-service prometheus grafana nginx-reverse-proxy 2>/dev/null || true"
+          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && docker-compose -f docker-compose-production.yml down --remove-orphans -v 2>/dev/null || true"
 
       - name: Deploy services
         env:
