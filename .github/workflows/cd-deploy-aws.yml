@@ -129,21 +129,7 @@ jobs:
           SSH_USER: ${{ secrets.AWS_EC2_USER }}
           SERVICE: ${{ github.event.inputs.service }}
         run: |
-          ssh $SSH_USER@$SSH_HOST << 'EOF'
-          cd ~/arka-deployment
-
-          # Set environment variables for docker-compose
-          export DOCKER_REGISTRY=ghcr.io/thewarmo
-          export TAG=latest
-
-          if [ "${{ env.SERVICE }}" = "all" ] || [ -z "${{ env.SERVICE }}" ]; then
-            echo "🔄 Pulling all service images..."
-            docker-compose -f docker-compose-production.yml pull
-          else
-            echo "🔄 Pulling ${{ env.SERVICE }} image..."
-            docker-compose -f docker-compose-production.yml pull ${{ env.SERVICE }}
-          fi
-          EOF
+          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && DOCKER_REGISTRY=ghcr.io/thewarmo TAG=latest docker-compose -f docker-compose-production.yml pull"
 
       - name: Deploy services
         env:
@@ -151,17 +137,7 @@ jobs:
           SSH_USER: ${{ secrets.AWS_EC2_USER }}
           SERVICE: ${{ github.event.inputs.service }}
         run: |
-          ssh $SSH_USER@$SSH_HOST << 'EOF'
-          cd ~/arka-deployment
-
-          if [ "${{ env.SERVICE }}" = "all" ] || [ -z "${{ env.SERVICE }}" ]; then
-            echo "🚀 Deploying all services..."
-            docker-compose -f docker-compose-production.yml up -d
-          else
-            echo "🚀 Deploying ${{ env.SERVICE }}..."
-            docker-compose -f docker-compose-production.yml up -d --no-deps ${{ env.SERVICE }}
-          fi
-          EOF
+          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && DOCKER_REGISTRY=ghcr.io/thewarmo TAG=latest docker-compose -f docker-compose-production.yml up -d"
 
       - name: Wait for services to be healthy
         env:
