@@ -93,6 +93,8 @@ jobs:
           SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
           SSH_USER: ${{ secrets.AWS_EC2_USER }}
           CONFIG_GIT_URI: ${{ secrets.CONFIG_GIT_URI }}
+          CONFIG_GIT_USERNAME: ${{ secrets.CONFIG_GIT_USERNAME }}
+          CONFIG_GIT_PASSWORD: ${{ secrets.CONFIG_GIT_PASSWORD }}
           RAILWAY_POSTGRES_URL: ${{ secrets.RAILWAY_POSTGRES_URL }}
           RAILWAY_POSTGRES_USER: ${{ secrets.RAILWAY_POSTGRES_USER }}
           RAILWAY_POSTGRES_PASSWORD: ${{ secrets.RAILWAY_POSTGRES_PASSWORD }}
@@ -109,6 +111,8 @@ jobs:
           ssh $SSH_USER@$SSH_HOST "echo 'SPRING_PROFILES_ACTIVE=prod' >> ~/arka-deployment/.env"
           ssh $SSH_USER@$SSH_HOST "echo 'CONFIG_GIT_URI=$CONFIG_GIT_URI' >> ~/arka-deployment/.env"
           ssh $SSH_USER@$SSH_HOST "echo 'CONFIG_GIT_BRANCH=main' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'CONFIG_GIT_USERNAME=$CONFIG_GIT_USERNAME' >> ~/arka-deployment/.env"
+          ssh $SSH_USER@$SSH_HOST "echo 'CONFIG_GIT_PASSWORD=$CONFIG_GIT_PASSWORD' >> ~/arka-deployment/.env"
           ssh $SSH_USER@$SSH_HOST "echo 'RAILWAY_POSTGRES_URL=$RAILWAY_POSTGRES_URL' >> ~/arka-deployment/.env"
           ssh $SSH_USER@$SSH_HOST "echo 'RAILWAY_POSTGRES_USER=$RAILWAY_POSTGRES_USER' >> ~/arka-deployment/.env"
           ssh $SSH_USER@$SSH_HOST "echo 'RAILWAY_POSTGRES_PASSWORD=$RAILWAY_POSTGRES_PASSWORD' >> ~/arka-deployment/.env"
