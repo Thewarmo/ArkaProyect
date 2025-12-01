@@ -136,7 +136,7 @@ jobs:
           SSH_HOST: ${{ secrets.AWS_EC2_HOST }}
           SSH_USER: ${{ secrets.AWS_EC2_USER }}
         run: |
-          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && docker-compose -f docker-compose-production.yml down --remove-orphans 2>/dev/null || true"
+          ssh $SSH_USER@$SSH_HOST "cd ~/arka-deployment && docker-compose -f docker-compose-production.yml down --remove-orphans -v 2>/dev/null || true; docker rm -f prometheus config-server eureka-server api-gateway 2>/dev/null || true"
 
       - name: Deploy services
         env:
