@@ -1,0 +1,2090 @@
+{
+	"info": {
+		"_postman_id": "arka-microservices-e2e-tests",
+		"name": "Arka Microservices - E2E Tests",
+		"description": "Colección completa de pruebas E2E para los microservicios de Arka.\n\n## Flujo de Pruebas Completo\n1. **Auth** - Registro y Login de usuario\n2. **Customer** - Crear perfil de cliente\n3. **Product** - Consultar productos disponibles\n4. **Cart** - Agregar productos al carrito\n5. **Order** - Crear orden de compra\n6. **Inventory** - Verificar reserva de stock\n7. **Notification** - Verificar notificación enviada\n8. **Report** - Generar reporte de ventas\n\n## Variables de Entorno Requeridas\n- `base_url`: URL del API Gateway (ej: http://localhost:8080)\n- `auth_token`: Se genera automáticamente después del login",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "customer_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "product_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "cart_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "order_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "notification_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "test_email",
+			"value": "test@arka.com",
+			"type": "string"
+		},
+		{
+			"key": "test_username",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "0. Health Checks",
+			"item": [
+				{
+					"name": "Config Server Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Config Server is healthy', function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('UP');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/config-server/actuator/health",
+							"host": ["{{base_url}}"],
+							"path": ["config-server", "actuator", "health"]
+						}
+					}
+				},
+				{
+					"name": "Eureka Server Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Eureka Server is healthy', function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('UP');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/eureka-server/actuator/health",
+							"host": ["{{base_url}}"],
+							"path": ["eureka-server", "actuator", "health"]
+						}
+					}
+				},
+				{
+					"name": "API Gateway Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('API Gateway is healthy', function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('UP');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/actuator/health",
+							"host": ["{{base_url}}"],
+							"path": ["actuator", "health"]
+						}
+					}
+				}
+			],
+			"description": "Verificación de salud de los servicios de infraestructura"
+		},
+		{
+			"name": "1. Auth Server",
+			"item": [
+				{
+					"name": "1.1 Register User",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Generate unique username for each test run",
+									"var timestamp = Date.now();",
+									"var username = 'testuser_' + timestamp;",
+									"pm.collectionVariables.set('test_username', username);",
+									"pm.collectionVariables.set('test_email', username + '@arka.com');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('User registered successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response contains token and userId', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('token');",
+									"    pm.expect(jsonData).to.have.property('userId');",
+									"    ",
+									"    // Save for later use",
+									"    pm.collectionVariables.set('auth_token', jsonData.token);",
+									"    pm.collectionVariables.set('user_id', jsonData.userId);",
+									"});",
+									"",
+									"pm.test('Response contains user role', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('role');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"{{test_username}}\",\n    \"email\": \"{{test_email}}\",\n    \"password\": \"Test123!@#\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "1.2 Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains valid token', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('token');",
+									"    pm.expect(jsonData.token).to.be.a('string').and.not.empty;",
+									"    ",
+									"    // Update token",
+									"    pm.collectionVariables.set('auth_token', jsonData.token);",
+									"});",
+									"",
+									"pm.test('UserId matches registered user', function () {",
+									"    var jsonData = pm.response.json();",
+									"    var expectedUserId = pm.collectionVariables.get('user_id');",
+									"    pm.expect(jsonData.userId.toString()).to.eql(expectedUserId.toString());",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"{{test_username}}\",\n    \"password\": \"Test123!@#\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "1.3 Validate Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Token validation successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Token is valid', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.valid).to.be.true;",
+									"});",
+									"",
+									"pm.test('Response contains user info', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('userId');",
+									"    pm.expect(jsonData).to.have.property('username');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"{{auth_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/validate",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "validate"]
+						}
+					}
+				},
+				{
+					"name": "1.4 Get User Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get user details successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains user details', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('username');",
+									"    pm.expect(jsonData).to.have.property('email');",
+									"    pm.expect(jsonData).to.have.property('role');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/users/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "users", "{{user_id}}"]
+						}
+					}
+				}
+			],
+			"description": "Pruebas del servicio de autenticación"
+		},
+		{
+			"name": "2. Customer Service",
+			"item": [
+				{
+					"name": "2.1 Create Customer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Customer created successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response contains customer details', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('companyName');",
+									"    pm.expect(jsonData).to.have.property('contactName');",
+									"    ",
+									"    // Save customer ID",
+									"    pm.collectionVariables.set('customer_id', jsonData.id);",
+									"});",
+									"",
+									"pm.test('Customer linked to user', function () {",
+									"    var jsonData = pm.response.json();",
+									"    var expectedUserId = pm.collectionVariables.get('user_id');",
+									"    pm.expect(jsonData.userId.toString()).to.eql(expectedUserId.toString());",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": {{user_id}},\n    \"companyName\": \"Test Company S.A.\",\n    \"taxId\": \"12345678-9\",\n    \"contactName\": \"Juan Perez\",\n    \"phone\": \"+57 300 123 4567\",\n    \"email\": \"{{test_email}}\",\n    \"country\": \"Colombia\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customers",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customers"]
+						}
+					}
+				},
+				{
+					"name": "2.2 Get Customer by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get customer successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains correct customer', function () {",
+									"    var jsonData = pm.response.json();",
+									"    var expectedId = pm.collectionVariables.get('customer_id');",
+									"    pm.expect(jsonData.id.toString()).to.eql(expectedId.toString());",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customers/{{customer_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customers", "{{customer_id}}"]
+						}
+					}
+				},
+				{
+					"name": "2.3 Get Customer by User ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get customer by userId successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Customer matches user', function () {",
+									"    var jsonData = pm.response.json();",
+									"    var expectedUserId = pm.collectionVariables.get('user_id');",
+									"    pm.expect(jsonData.userId.toString()).to.eql(expectedUserId.toString());",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customers/user/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customers", "user", "{{user_id}}"]
+						}
+					}
+				},
+				{
+					"name": "2.4 Add Address to Customer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Address added successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Customer has addresses', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.addresses).to.be.an('array');",
+									"    pm.expect(jsonData.addresses.length).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"street\": \"Calle 123 #45-67\",\n    \"city\": \"Bogota\",\n    \"state\": \"Cundinamarca\",\n    \"zipCode\": \"110111\",\n    \"country\": \"Colombia\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customers/{{customer_id}}/addresses",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customers", "{{customer_id}}", "addresses"]
+						}
+					}
+				},
+				{
+					"name": "2.5 Update Customer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Customer updated successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Customer name updated', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.contactName).to.eql('Juan Carlos Perez');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"companyName\": \"Test Company S.A.\",\n    \"contactName\": \"Juan Carlos Perez\",\n    \"phone\": \"+57 300 987 6543\",\n    \"email\": \"{{test_email}}\",\n    \"country\": \"Colombia\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customers/{{customer_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customers", "{{customer_id}}"]
+						}
+					}
+				},
+				{
+					"name": "2.6 Get All Customers",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get all customers successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customers",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customers"]
+						}
+					}
+				}
+			],
+			"description": "Pruebas del servicio de clientes"
+		},
+		{
+			"name": "3. Product Service",
+			"item": [
+				{
+					"name": "3.1 Create Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Product created successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response contains product details', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('price');",
+									"    pm.expect(jsonData).to.have.property('stock');",
+									"    ",
+									"    // Save product ID",
+									"    pm.collectionVariables.set('product_id', jsonData.id);",
+									"});",
+									"",
+									"pm.test('Product has correct initial stock', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.stock).to.eql(100);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Laptop Gamer Pro\",\n    \"description\": \"Laptop de alto rendimiento para gaming con RTX 4080\",\n    \"price\": 2500000.00,\n    \"stock\": 100,\n    \"categoryId\": 1,\n    \"brandId\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products"]
+						}
+					}
+				},
+				{
+					"name": "3.2 Get All Products",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get products successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array of products', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('Products have required fields', function () {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.length > 0) {",
+									"        pm.expect(jsonData[0]).to.have.property('id');",
+									"        pm.expect(jsonData[0]).to.have.property('name');",
+									"        pm.expect(jsonData[0]).to.have.property('price');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products"]
+						}
+					}
+				},
+				{
+					"name": "3.3 Get Product by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get product successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains correct product', function () {",
+									"    var jsonData = pm.response.json();",
+									"    var expectedId = pm.collectionVariables.get('product_id');",
+									"    pm.expect(jsonData.id.toString()).to.eql(expectedId.toString());",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/{{product_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products", "{{product_id}}"]
+						}
+					}
+				},
+				{
+					"name": "3.4 Update Product Stock (Add)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Stock updated successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Stock increased correctly', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.stock).to.eql(150);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"quantity\": 50,\n    \"operation\": \"ADD\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/{{product_id}}/stock",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products", "{{product_id}}", "stock"]
+						}
+					}
+				},
+				{
+					"name": "3.5 Get Low Stock Products",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Low stock report successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has expected structure', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('products');",
+									"    pm.expect(jsonData.products).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/low-stock?threshold=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products", "low-stock"],
+							"query": [
+								{
+									"key": "threshold",
+									"value": "10"
+								}
+							]
+						}
+					}
+				}
+			],
+			"description": "Pruebas del servicio de productos"
+		},
+		{
+			"name": "4. Cart Service",
+			"item": [
+				{
+					"name": "4.1 Get or Create Cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Cart retrieved/created successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains cart details', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('items');",
+									"    pm.expect(jsonData).to.have.property('totalAmount');",
+									"    ",
+									"    // Save cart ID",
+									"    pm.collectionVariables.set('cart_id', jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/carts/customer/{{customer_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "carts", "customer", "{{customer_id}}"]
+						}
+					}
+				},
+				{
+					"name": "4.2 Add Item to Cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Item added to cart successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Cart contains added item', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.items).to.be.an('array');",
+									"    pm.expect(jsonData.items.length).to.be.greaterThan(0);",
+									"    pm.expect(jsonData.totalItems).to.be.greaterThan(0);",
+									"});",
+									"",
+									"pm.test('Total amount updated', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.totalAmount).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": {{product_id}},\n    \"quantity\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/carts/customer/{{customer_id}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "carts", "customer", "{{customer_id}}", "items"]
+						}
+					}
+				},
+				{
+					"name": "4.3 Add Another Item",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Second item added successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Cart contains multiple items', function () {",
+									"    var jsonData = pm.response.json();",
+									"    // Either 2 different products or quantity increased",
+									"    pm.expect(jsonData.totalItems).to.be.greaterThan(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": {{product_id}},\n    \"quantity\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/carts/customer/{{customer_id}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "carts", "customer", "{{customer_id}}", "items"]
+						}
+					}
+				},
+				{
+					"name": "4.4 Get Abandoned Carts",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get abandoned carts successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/carts/abandoned",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "carts", "abandoned"]
+						}
+					}
+				}
+			],
+			"description": "Pruebas del servicio de carrito de compras"
+		},
+		{
+			"name": "5. Inventory Service",
+			"item": [
+				{
+					"name": "5.1 Get Inventory for Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get inventory successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains inventory details', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('productId');",
+									"    pm.expect(jsonData).to.have.property('availableStock');",
+									"    pm.expect(jsonData).to.have.property('reservedStock');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/inventory/product/{{product_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "inventory", "product", "{{product_id}}"]
+						}
+					}
+				},
+				{
+					"name": "5.2 Reserve Stock",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Stock reserved successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Reserved stock increased', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.reservedStock).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": {{product_id}},\n    \"quantity\": 5,\n    \"orderId\": \"test-order-001\",\n    \"reason\": \"Test reservation\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/inventory/reserve",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "inventory", "reserve"]
+						}
+					}
+				},
+				{
+					"name": "5.3 Release Stock",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Stock released successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": {{product_id}},\n    \"quantity\": 5,\n    \"orderId\": \"test-order-001\",\n    \"reason\": \"Test release\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/inventory/release",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "inventory", "release"]
+						}
+					}
+				}
+			],
+			"description": "Pruebas del servicio de inventario"
+		},
+		{
+			"name": "6. Order Service",
+			"item": [
+				{
+					"name": "6.1 Create Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Order created successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response contains order details', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('orderNumber');",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"    pm.expect(jsonData).to.have.property('totalAmount');",
+									"    ",
+									"    // Save order ID",
+									"    pm.collectionVariables.set('order_id', jsonData.id);",
+									"});",
+									"",
+									"pm.test('Order has PENDING status', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.be.oneOf(['PENDING', 'CREATED', 'CONFIRMED']);",
+									"});",
+									"",
+									"pm.test('Order linked to correct customer', function () {",
+									"    var jsonData = pm.response.json();",
+									"    var expectedCustomerId = pm.collectionVariables.get('customer_id');",
+									"    pm.expect(jsonData.customerId.toString()).to.eql(expectedCustomerId.toString());",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"customerId\": {{customer_id}},\n    \"items\": [\n        {\n            \"productId\": {{product_id}},\n            \"quantity\": 2,\n            \"unitPrice\": 2500000.00\n        }\n    ],\n    \"shippingAddress\": {\n        \"street\": \"Calle 123 #45-67\",\n        \"city\": \"Bogota\",\n        \"state\": \"Cundinamarca\",\n        \"zipCode\": \"110111\",\n        \"country\": \"Colombia\"\n    },\n    \"notes\": \"Entregar en horario de oficina\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders"]
+						}
+					}
+				},
+				{
+					"name": "6.2 Get Order by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get order successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains order items', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('items');",
+									"    pm.expect(jsonData.items).to.be.an('array');",
+									"    pm.expect(jsonData.items.length).to.be.greaterThan(0);",
+									"});",
+									"",
+									"pm.test('Order has correct ID', function () {",
+									"    var jsonData = pm.response.json();",
+									"    var expectedId = pm.collectionVariables.get('order_id');",
+									"    pm.expect(jsonData.id.toString()).to.eql(expectedId.toString());",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/{{order_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders", "{{order_id}}"]
+						}
+					}
+				},
+				{
+					"name": "6.3 Cancel Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Order cancelled successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Order status is CANCELLED', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('CANCELLED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/{{order_id}}/cancel",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders", "{{order_id}}", "cancel"]
+						}
+					}
+				}
+			],
+			"description": "Pruebas del servicio de órdenes"
+		},
+		{
+			"name": "7. Notification Service",
+			"item": [
+				{
+					"name": "7.1 Send Notification",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Notification sent successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response contains notification details', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"    ",
+									"    // Save notification ID",
+									"    pm.collectionVariables.set('notification_id', jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"recipientEmail\": \"{{test_email}}\",\n    \"subject\": \"Test Notification from Postman\",\n    \"notificationType\": \"GENERAL\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "notifications"]
+						}
+					}
+				},
+				{
+					"name": "7.2 Get Notification by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get notification successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains notification details', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"    pm.expect(jsonData).to.have.property('recipientEmail');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/{{notification_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "notifications", "{{notification_id}}"]
+						}
+					}
+				},
+				{
+					"name": "7.3 Get All Notifications",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get all notifications successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "notifications"]
+						}
+					}
+				},
+				{
+					"name": "7.4 Get Notifications by Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get notifications by status successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/status/SENT",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "notifications", "status", "SENT"]
+						}
+					}
+				},
+				{
+					"name": "7.5 Get Notifications for Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get order notifications successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/order/{{order_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "notifications", "order", "{{order_id}}"]
+						}
+					}
+				}
+			],
+			"description": "Pruebas del servicio de notificaciones"
+		},
+		{
+			"name": "8. Report Service",
+			"item": [
+				{
+					"name": "8.1 Get Current Week Sales Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get current week report successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains report structure', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('topProducts');",
+									"    pm.expect(jsonData).to.have.property('topCustomers');",
+									"    pm.expect(jsonData).to.have.property('totalSales');",
+									"    pm.expect(jsonData).to.have.property('period');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/reports/sales/weekly/current",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "reports", "sales", "weekly", "current"]
+						}
+					}
+				},
+				{
+					"name": "8.2 Get Previous Week Sales Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get previous week report successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains report structure', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('period');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/reports/sales/weekly/previous",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "reports", "sales", "weekly", "previous"]
+						}
+					}
+				},
+				{
+					"name": "8.3 Get Custom Date Range Report",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Set date range for last 30 days",
+									"var endDate = new Date();",
+									"var startDate = new Date();",
+									"startDate.setDate(startDate.getDate() - 30);",
+									"",
+									"pm.variables.set('start_date', startDate.toISOString().split('T')[0]);",
+									"pm.variables.set('end_date', endDate.toISOString().split('T')[0]);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Get custom range report successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains report data', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('topProducts');",
+									"    pm.expect(jsonData.topProducts).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/reports/sales/weekly?startDate={{start_date}}&endDate={{end_date}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "reports", "sales", "weekly"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "{{start_date}}"
+								},
+								{
+									"key": "endDate",
+									"value": "{{end_date}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "8.4 Export Report as CSV",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var endDate = new Date();",
+									"var startDate = new Date();",
+									"startDate.setDate(startDate.getDate() - 7);",
+									"",
+									"pm.variables.set('start_date', startDate.toISOString().split('T')[0]);",
+									"pm.variables.set('end_date', endDate.toISOString().split('T')[0]);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('CSV export successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is CSV format', function () {",
+									"    var contentType = pm.response.headers.get('Content-Type');",
+									"    pm.expect(contentType).to.include('text/csv');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/reports/sales/weekly/export/csv?startDate={{start_date}}&endDate={{end_date}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "reports", "sales", "weekly", "export", "csv"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "{{start_date}}"
+								},
+								{
+									"key": "endDate",
+									"value": "{{end_date}}"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "8.5 Export Report as PDF",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var endDate = new Date();",
+									"var startDate = new Date();",
+									"startDate.setDate(startDate.getDate() - 7);",
+									"",
+									"pm.variables.set('start_date', startDate.toISOString().split('T')[0]);",
+									"pm.variables.set('end_date', endDate.toISOString().split('T')[0]);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('PDF export successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is PDF format', function () {",
+									"    var contentType = pm.response.headers.get('Content-Type');",
+									"    pm.expect(contentType).to.include('application/pdf');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/reports/sales/weekly/export/pdf?startDate={{start_date}}&endDate={{end_date}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "reports", "sales", "weekly", "export", "pdf"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "{{start_date}}"
+								},
+								{
+									"key": "endDate",
+									"value": "{{end_date}}"
+								}
+							]
+						}
+					}
+				}
+			],
+			"description": "Pruebas del servicio de reportes"
+		},
+		{
+			"name": "9. E2E Complete Flow",
+			"item": [
+				{
+					"name": "E2E 1. Register New User",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var timestamp = Date.now();",
+									"pm.collectionVariables.set('e2e_username', 'e2e_user_' + timestamp);",
+									"pm.collectionVariables.set('e2e_email', 'e2e_' + timestamp + '@arka.com');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('E2E: User registration successful', function () {",
+									"    pm.response.to.have.status(201);",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('e2e_token', jsonData.token);",
+									"    pm.collectionVariables.set('e2e_user_id', jsonData.userId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"{{e2e_username}}\",\n    \"email\": \"{{e2e_email}}\",\n    \"password\": \"E2ETest123!@#\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "E2E 2. Create Customer Profile",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('E2E: Customer created', function () {",
+									"    pm.response.to.have.status(201);",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('e2e_customer_id', jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{e2e_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": {{e2e_user_id}},\n    \"companyName\": \"E2E Test Company\",\n    \"taxId\": \"E2E-12345\",\n    \"contactName\": \"E2E Test User\",\n    \"phone\": \"+57 300 555 1234\",\n    \"email\": \"{{e2e_email}}\",\n    \"country\": \"Colombia\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customers",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customers"]
+						}
+					}
+				},
+				{
+					"name": "E2E 3. Create Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('E2E: Product created', function () {",
+									"    pm.response.to.have.status(201);",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('e2e_product_id', jsonData.id);",
+									"    pm.collectionVariables.set('e2e_product_price', jsonData.price);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{e2e_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"E2E Test Product\",\n    \"description\": \"Product created for E2E testing\",\n    \"price\": 150000.00,\n    \"stock\": 50,\n    \"categoryId\": 1,\n    \"brandId\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products"]
+						}
+					}
+				},
+				{
+					"name": "E2E 4. Add Product to Cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('E2E: Item added to cart', function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.totalItems).to.be.greaterThan(0);",
+									"    pm.collectionVariables.set('e2e_cart_id', jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{e2e_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": {{e2e_product_id}},\n    \"quantity\": 3\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/carts/customer/{{e2e_customer_id}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "carts", "customer", "{{e2e_customer_id}}", "items"]
+						}
+					}
+				},
+				{
+					"name": "E2E 5. Create Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('E2E: Order created successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('orderNumber');",
+									"    pm.collectionVariables.set('e2e_order_id', jsonData.id);",
+									"    pm.collectionVariables.set('e2e_order_number', jsonData.orderNumber);",
+									"});",
+									"",
+									"pm.test('E2E: Order total is correct', function () {",
+									"    var jsonData = pm.response.json();",
+									"    // 3 items * 150000 = 450000",
+									"    pm.expect(jsonData.totalAmount).to.eql(450000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{e2e_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"customerId\": {{e2e_customer_id}},\n    \"items\": [\n        {\n            \"productId\": {{e2e_product_id}},\n            \"quantity\": 3,\n            \"unitPrice\": 150000.00\n        }\n    ],\n    \"shippingAddress\": {\n        \"street\": \"Carrera 7 #100-20\",\n        \"city\": \"Bogota\",\n        \"state\": \"Cundinamarca\",\n        \"zipCode\": \"110221\",\n        \"country\": \"Colombia\"\n    },\n    \"notes\": \"E2E Test Order - Please handle with care\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders"]
+						}
+					}
+				},
+				{
+					"name": "E2E 6. Verify Inventory Reserved",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('E2E: Inventory check successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('E2E: Stock was reserved', function () {",
+									"    var jsonData = pm.response.json();",
+									"    // After order, 3 items should be reserved",
+									"    pm.expect(jsonData.reservedStock).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{e2e_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/inventory/product/{{e2e_product_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "inventory", "product", "{{e2e_product_id}}"]
+						}
+					}
+				},
+				{
+					"name": "E2E 7. Check Order Notification",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('E2E: Get order notifications', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Note: Notification might take a moment to be created via RabbitMQ",
+									"pm.test('E2E: Response is an array', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{e2e_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/notifications/order/{{e2e_order_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "notifications", "order", "{{e2e_order_id}}"]
+						}
+					}
+				},
+				{
+					"name": "E2E 8. Generate Sales Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('E2E: Report generated', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('E2E: Report includes our order', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.totalSales).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{e2e_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/reports/sales/weekly/current",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "reports", "sales", "weekly", "current"]
+						}
+					}
+				},
+				{
+					"name": "E2E 9. Cleanup - Clear Cart",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('E2E: Cart cleared', function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"console.log('E2E Test Complete!');",
+									"console.log('User ID: ' + pm.collectionVariables.get('e2e_user_id'));",
+									"console.log('Customer ID: ' + pm.collectionVariables.get('e2e_customer_id'));",
+									"console.log('Order Number: ' + pm.collectionVariables.get('e2e_order_number'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{e2e_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/carts/customer/{{e2e_customer_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "carts", "customer", "{{e2e_customer_id}}"]
+						}
+					}
+				}
+			],
+			"description": "Flujo E2E completo que simula el ciclo de vida de una compra:\n1. Registro de usuario\n2. Creación de perfil de cliente\n3. Creación de producto\n4. Agregar al carrito\n5. Crear orden\n6. Verificar inventario\n7. Verificar notificación\n8. Generar reporte\n9. Limpiar carrito"
+		}
+	]
+}

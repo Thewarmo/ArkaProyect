@@ -88,6 +88,7 @@ services:
         -XX:MaxMetaspaceSize=64m
         -Djava.security.egd=file:/dev/./urandom
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      CONFIG_SERVER_URL: http://config-server:8889
       SPRING_CLOUD_CONFIG_URI: http://config-server:8889
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     mem_limit: 192m
