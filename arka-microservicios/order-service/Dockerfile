@@ -4,6 +4,9 @@ FROM eclipse-temurin:21-jdk-alpine AS builder
 
 WORKDIR /app
 
+# Cache buster - change this value to force rebuild
+ARG CACHE_BUST=2024120201
+
 # Copy Gradle wrapper and build files
 COPY gradlew .
 COPY gradle gradle
@@ -16,8 +19,9 @@ RUN chmod +x gradlew
 # Download dependencies (cached layer)
 RUN ./gradlew dependencies --no-daemon || return 0
 
-# Copy source code
+# Copy source code and invalidate cache
 COPY src src
+RUN echo "Build version: ${CACHE_BUST}"
 
 # Build the application
 RUN ./gradlew bootJar --no-daemon
