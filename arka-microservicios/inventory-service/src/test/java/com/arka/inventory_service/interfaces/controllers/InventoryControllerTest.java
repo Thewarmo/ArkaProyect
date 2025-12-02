@@ -42,6 +42,9 @@ class InventoryControllerTest {
     private GetInventoryByProductIdUseCase getInventoryByProductIdUseCase;
 
     @MockBean
+    private CreateInventoryUseCase createInventoryUseCase;
+
+    @MockBean
     private ReserveStockUseCase reserveStockUseCase;
 
     @MockBean
