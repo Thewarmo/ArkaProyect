@@ -8,6 +8,8 @@ plugins {
 group = 'com.arka'
 version = '0.0.1-SNAPSHOT'
 
+// Build timestamp to invalidate cache: 2024-12-02T01
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
