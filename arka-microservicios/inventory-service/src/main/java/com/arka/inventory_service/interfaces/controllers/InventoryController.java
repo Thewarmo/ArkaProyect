@@ -13,8 +13,15 @@ import org.springframework.web.bind.annotation.*;
 public class InventoryController {
 
     private final GetInventoryByProductIdUseCase getInventoryByProductIdUseCase;
+    private final CreateInventoryUseCase createInventoryUseCase;
     private final ReserveStockUseCase reserveStockUseCase;
     private final ReleaseStockUseCase releaseStockUseCase;
+
+    @PostMapping
+    public ResponseEntity<InventoryResponse> createInventory(@Valid @RequestBody CreateInventoryRequest request) {
+        InventoryResponse response = createInventoryUseCase.execute(request);
+        return ResponseEntity.status(201).body(response);
+    }
 
     @GetMapping("/product/{productId}")
     public ResponseEntity<InventoryResponse> getInventoryByProductId(@PathVariable Long productId) {

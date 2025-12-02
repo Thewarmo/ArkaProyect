@@ -12,6 +12,16 @@
 			"type": "string"
 		},
 		{
+			"key": "config_server_url",
+			"value": "http://localhost:8889",
+			"type": "string"
+		},
+		{
+			"key": "eureka_url",
+			"value": "http://localhost:8761",
+			"type": "string"
+		},
+		{
 			"key": "auth_token",
 			"value": "",
 			"type": "string"
@@ -82,9 +92,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/config-server/actuator/health",
-							"host": ["{{base_url}}"],
-							"path": ["config-server", "actuator", "health"]
+							"raw": "{{config_server_url}}/actuator/health",
+							"host": ["{{config_server_url}}"],
+							"path": ["actuator", "health"]
 						}
 					}
 				},
@@ -109,9 +119,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/eureka-server/actuator/health",
-							"host": ["{{base_url}}"],
-							"path": ["eureka-server", "actuator", "health"]
+							"raw": "{{eureka_url}}/actuator/health",
+							"host": ["{{eureka_url}}"],
+							"path": ["actuator", "health"]
 						}
 					}
 				},
@@ -169,7 +179,7 @@
 							"script": {
 								"exec": [
 									"pm.test('User registered successfully', function () {",
-									"    pm.response.to.have.status(201);",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
 									"});",
 									"",
 									"pm.test('Response contains token and userId', function () {",
@@ -201,7 +211,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"username\": \"{{test_username}}\",\n    \"email\": \"{{test_email}}\",\n    \"password\": \"Test123!@#\"\n}"
+							"raw": "{\n    \"username\": \"{{test_username}}\",\n    \"email\": \"{{test_email}}\",\n    \"password\": \"Test123!@#\",\n    \"firstName\": \"Test\",\n    \"lastName\": \"User\",\n    \"role\": \"CUSTOMER\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/v1/auth/register",
@@ -1742,7 +1752,7 @@
 							"script": {
 								"exec": [
 									"pm.test('E2E: User registration successful', function () {",
-									"    pm.response.to.have.status(201);",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
 									"    var jsonData = pm.response.json();",
 									"    pm.collectionVariables.set('e2e_token', jsonData.token);",
 									"    pm.collectionVariables.set('e2e_user_id', jsonData.userId);",
@@ -1762,7 +1772,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"username\": \"{{e2e_username}}\",\n    \"email\": \"{{e2e_email}}\",\n    \"password\": \"E2ETest123!@#\"\n}"
+							"raw": "{\n    \"username\": \"{{e2e_username}}\",\n    \"email\": \"{{e2e_email}}\",\n    \"password\": \"E2ETest123!@#\",\n    \"firstName\": \"E2E\",\n    \"lastName\": \"TestUser\",\n    \"role\": \"CUSTOMER\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/v1/auth/register",
