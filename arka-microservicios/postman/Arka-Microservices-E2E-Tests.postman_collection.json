@@ -1013,6 +1013,52 @@
 			"name": "5. Inventory Service",
 			"item": [
 				{
+					"name": "5.0 Create Inventory",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Inventory created successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response contains inventory details', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('productId');",
+									"    pm.expect(jsonData).to.have.property('availableStock');",
+									"    pm.expect(jsonData).to.have.property('reservedStock');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": {{product_id}},\n    \"availableStock\": 100,\n    \"reservedStock\": 0,\n    \"minimumStock\": 10\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/inventory",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "inventory"]
+						}
+					}
+				},
+				{
 					"name": "5.1 Get Inventory for Product",
 					"event": [
 						{

@@ -3,6 +3,7 @@ package com.arka.inventory_service.application.usecases;
 import com.arka.inventory_service.application.dto.CreateInventoryRequest;
 import com.arka.inventory_service.application.dto.InventoryResponse;
 import com.arka.inventory_service.domain.entities.Inventory;
+import com.arka.inventory_service.domain.exceptions.DuplicateInventoryException;
 import com.arka.inventory_service.domain.repositories.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,8 +25,7 @@ public class CreateInventoryUseCase {
 
         // Verificar si ya existe inventario para este producto
         if (inventoryRepository.existsByProductId(request.getProductId())) {
-            throw new IllegalArgumentException(
-                    "Ya existe inventario para el producto con ID: " + request.getProductId());
+            throw new DuplicateInventoryException(request.getProductId());
         }
 
         // Crear nueva entidad de inventario

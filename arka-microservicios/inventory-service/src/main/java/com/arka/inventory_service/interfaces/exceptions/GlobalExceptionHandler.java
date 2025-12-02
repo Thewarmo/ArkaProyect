@@ -42,4 +42,26 @@ public class GlobalExceptionHandler {
                 .message(ex.getMessage())
                 .build());
     }
+
+    @ExceptionHandler(DuplicateInventoryException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateInventory(DuplicateInventoryException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+            ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error("Inventario Duplicado")
+                .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message(ex.getMessage())
+                .build());
+    }
 }
