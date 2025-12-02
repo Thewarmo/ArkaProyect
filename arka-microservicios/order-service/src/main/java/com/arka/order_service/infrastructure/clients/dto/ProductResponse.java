@@ -19,5 +19,5 @@ public class ProductResponse {
     private Integer stock;
     private Long categoryId;
     private Long brandId;
-    private boolean active;
+    private boolean active = true; // Default to true since product-service doesn't include this field
 }
