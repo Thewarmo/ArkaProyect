@@ -100,3 +100,7 @@ buildNumber.properties
 
 # Spring Boot
 spring-boot-devtools.properties
+
+# Documentation (moved to docs/ folder)
+docs/
+*.md
