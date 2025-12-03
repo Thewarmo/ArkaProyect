@@ -1,11 +1,11 @@
 # Multi-stage Dockerfile for Order Service
-# Stage 1: Build stage
+# Build version: 2024-12-03-v2
 FROM eclipse-temurin:21-jdk-alpine AS builder
 
-WORKDIR /app
+# Force rebuild by creating unique file
+RUN echo "Build timestamp: $(date +%s)" > /tmp/build_marker
 
-# Cache buster - change this value to force rebuild
-ARG CACHE_BUST=2024120201
+WORKDIR /app
 
 # Copy Gradle wrapper and build files
 COPY gradlew .
@@ -19,12 +19,11 @@ RUN chmod +x gradlew
 # Download dependencies (cached layer)
 RUN ./gradlew dependencies --no-daemon || return 0
 
-# Copy source code and invalidate cache
+# Copy source code
 COPY src src
-RUN echo "Build version: ${CACHE_BUST}"
 
-# Build the application
-RUN ./gradlew bootJar --no-daemon
+# Build the application - force fresh build
+RUN ./gradlew clean bootJar --no-daemon
 
 # Extract JAR layers for better caching
 RUN mkdir -p build/extracted && \

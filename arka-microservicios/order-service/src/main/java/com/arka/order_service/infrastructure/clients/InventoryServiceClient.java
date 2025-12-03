@@ -19,6 +19,8 @@ public class InventoryServiceClient {
     private final WebClient inventoryWebClient;
 
     public InventoryResponse getInventoryByProductId(Long productId) {
+        // Build version: 2024-12-03-v1 - Using /product endpoint
+        log.debug("Consultando inventario para producto {} usando endpoint /product", productId);
         try {
             return inventoryWebClient.get()
                     .uri("/api/v1/inventory/product/{productId}", productId)
